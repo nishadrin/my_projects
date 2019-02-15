@@ -12,14 +12,14 @@ import pprint
 1. Ввод данных от пользователя
     #-Логин от Google
     #-Пароль от Google
-2. Кроссплатформенность (использовать .absolute())
-#3. Скачиваем файлы, которых нету
+#2. Скачиваем файлы, которых нету
     #-Google shits
-#4. Google shits - загуглить (:
-#5. Используя tkinter сделать графическое приложени
-#6. Сделать проверку на обновления
-#7. Сравнивать вес файлов которые уже скачаннами, с теми, что есть на сервере: если разный, то удаляем файл, что есть и скачиваем новый
+#3. Google shits - загуглить (:
+#4. Используя tkinter сделать графическое приложени
+#5. Сделать проверку на обновления и отправку отчетов об ошибке
+#6. Сравнивать размер файла которые уже скачаный, с теми, что есть на сервере: если разный размер, то удаляем файл, что есть и скачиваем новый
     -Можно уточнять у пользователя о замене файла скачивания, заменить или оставить
+#7. Оптимизировать код
 """
 
 class download_script():
@@ -172,41 +172,93 @@ class download_script():
         if not os.path.exists(path):
             if file2download==None and text==None:
                 os.mkdir(path)
+                print(f"Создана папка {path}\n")
 
             elif text != None:
                 with open(path, "w") as f:
                     f.write(text)
+                print(f"Создан файл {path}\n")
 
             elif file2download !=  None:
-                if "google" in file2download:
+                if ".google.com" in file2download:
                     pass
                 else:
                     urllib.request.urlretrieve(file2download, path)
+                    print(f"Скачали файл {path}\n")
+        else:
+            print(f"Путь/файл {path} уже существует\n")
+    # Создаем имена с расширениями скачевыемых файлов
+    def name_file(self, links_name_list, links_list):
+        n = 0
+        names = list()
+        while n+1 <= len(links_list):
+            if ".google.com" in links_list[n]:
+                names.append(links_name_list[n])
+            else:
+                expansion_link = re.findall(r"\.\w+$", links_list[n])
+                expansion_name = re.findall(r"\.\w+$", links_name_list[n])
+                if expansion_link == expansion_name:
+                    names.append(links_name_list[n])
+                else:
+                    names.append(f'{links_name_list[n]}{expansion_link[0]}')
+            n +=1
+
+        return names
+
+def fixit(email, password, url_2_parse):
+    pass
 
 def main():
     # Ввод данных
     email = 'geekbrains@mail.com'
     password = 'passwd'
     download = download_script()
+
     # Парсим все ссылки на уроки, вебинары и интерактивы
     urls_list = download.get_parse_lessons(email, password)
 
     for i in urls_list:
+        # Парсим сайт
         materials = download.get_parse_materials(email, password, i)
-        print(materials)
         curse_name = materials['curse_name']
+        #print(f'{curse_name}\n')
         lesson_name = materials['lesson_name']
-        content_url = materials['content_url']
-        links = materials['links']
+        name_list = materials['links']['name_list']
+        links_lists = materials['links']['links_list']
+        # Заменяем все "\" и "/" на "_", что бы при скачивании порграмма не считала, что это путь
+        curse_name = re.sub(r'\\', "_", curse_name)
+        curse_name = re.sub(r'/', "_", curse_name)
+        lesson_name = re.sub(r'\\', "_", lesson_name)
+        lesson_name = re.sub(r'/', "_", lesson_name)
+        # Создаем папки
+        download.download_file(os.path.abspath('GeekBrains/'))
+        download.download_file(os.path.abspath(f'GeekBrains/{curse_name}/'))
+        download.download_file(os.path.abspath(f'GeekBrains/{curse_name}/{lesson_name}/'))
+        # Скачаиваем инфу
         try:
-            comment = materials['comment']
+            download.download_file(os.path.abspath(f'GeekBrains/{curse_name}/{lesson_name}/Важные объявление.txt'), text= materials['comment'])
         except Exception as e:
             pass
 
         try:
-            dz = materials['dz']
+            download.download_file(os.path.abspath(f'GeekBrains/{curse_name}/{lesson_name}/Домашнее задание.txt'), text = materials['dz'])
         except Exception as e:
             pass
+
+        links_list = list()
+        for i in links_lists:
+            links_list.append(i)
+
+        links_name_list = list()
+        for i in name_list:
+            links_name_list.append(i)
+
+        names = download.name_file(links_name_list, links_list)
+
+        n = 0
+        while n+1 <= len(links_list):
+            download.download_file(os.path.abspath(f'GeekBrains/{curse_name}/{lesson_name}/{names[n]}'), file2download = links_list[n])
+            n += 1
 
 if __name__ == '__main__':
     main()
