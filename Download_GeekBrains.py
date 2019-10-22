@@ -195,37 +195,61 @@ class DownloadGB():
 
             return names
 
-if __name__ == '__main__':
+def main():
     email = input('Введите email от GB: ')
     password = input('Введите пароль от GB: ')
-    try:
-        parse = ParseGB(email, password)
-    except Exception as e:
-        parse = None
-    if parse == None:
-        print("Не удается скачать ссылки на уроки с основной страницы" + \
-            "https://geekbrains.ru/education, возможные проблемы:\n" + \
-            "Нет подключения к интернету\nНе верный логин и/или пароль от GB"
-            )
-    else:
-        print('Парсим страницу educations...')
-    lessons, chapters, interactives = parse.parse_courses()
-    lessons_list = list()
-    chapters_list = list()
-    interactives_list = list()
-    print('Парсим каждый урок по отдельности:')
-    for i in lessons:
-        print(f'Парсим ссылку {i}')
-        dic = parse.parse_lesson_or_chapter(i)
-        lessons_list.append(dic)
-    for i in chapters:
-        print(f'Парсим ссылку {i}')
-        dic = parse.parse_lesson_or_chapter(i)
-        chapters_list.append(dic)
-    for i in interactives:
-        print(f'Парсим ссылку {i}')
-        dic = parse.parse_interactive(i)
-        interactives_list.append(dic)
+    print(
+        '1 - Пропарсить и сохранить в json', '2 - Скачать из json',
+        '3 - Пропарсить и скачать (удаляется json файл)',
+        '4-бесконечность - Пропарсить и скачать (сохранить json файл)', sep='\n'
+        )
+    step = int(input('Что будем делать?(Введите цифру) '))
+    courses = os.path.abspath('courses.json')
+    if step != 2:
+        try:
+            parse = ParseGB(email, password)
+        except Exception as e:
+            parse = None
+        if parse == None:
+            print("Не удается скачать ссылки на уроки с основной страницы" + \
+                "https://geekbrains.ru/education, возможные проблемы:\n" + \
+                "Нет подключения к интернету\nНе верный логин и/или пароль от GB"
+                )
+        else:
+            print('Парсим страницу educations...')
+        lessons, chapters, interactives = parse.parse_courses()
+        lessons_list = list()
+        chapters_list = list()
+        interactives_list = list()
+        print('Парсим каждый урок по отдельности:')
+        for i in lessons:
+            print(f'Парсим ссылку {i}')
+            dic = parse.parse_lesson_or_chapter(i)
+            lessons_list.append(dic)
+        for i in chapters:
+            print(f'Парсим ссылку {i}')
+            dic = parse.parse_lesson_or_chapter(i)
+            chapters_list.append(dic)
+        for i in interactives:
+            print(f'Парсим ссылку {i}')
+            dic = parse.parse_interactive(i)
+            interactives_list.append(dic)
+        # Сохраняем в файл json все данные по курсам
+        list_json = {
+            'lessons': lessons_list, 'chapters': chapters_list,
+            'interactives': interactives_list
+            }
+        with open(courses, "w", encoding="utf-8") as file:
+            file.write(json.dumps(list_json, ensure_ascii=False))
+        print(f'Сохранили курсы в файл: {courses}')
+    if step == 1:
+        return True
+    if step == 2:
+        with open(courses, "r", encoding="utf-8") as file:
+            read_json = json.load(file)
+        lessons_list = read_json['lessons']
+        chapters_list = read_json['chapters']
+        interactives_list = read_json['interactives']
     print('Скачваем материал...')
     start_path = os.path.abspath('GeekBrains/')
     download = DownloadGB()
@@ -275,5 +299,10 @@ if __name__ == '__main__':
                 file2download = links_list[n]
                 )
             n += 1
-
     parse.close_session()
+    if step == 3:
+        os.remove(courses)
+    print('Спасибо, за использование скрипта!')
+
+if __name__ == '__main__':
+    main()
