@@ -203,22 +203,27 @@ def main():
         '1 - Пропарсить и сохранить в json',
         f'2 - Скачать из json (файл должен находится по пути: {courses})',
         '3 - Пропарсить и скачать (удаляется json файл)',
-        '4-бесконечность - Пропарсить и скачать (сохранить json файл)', sep='\n'
+        '4-бесконечность - Пропарсить и скачать (сохранить json файл)',
+        'PS: Для скачивания материала может потребоваться много времени ' +\
+        'и места на жестком диске', sep='\n'
         )
     step = int(input('Что будем делать?(Введите цифру) '))
     if step != 2:
+        lessons = None
         try:
             parse = ParseGB(email, password)
+            lessons, chapters, interactives = parse.parse_courses()
         except Exception as e:
-            parse = None
-        if parse == None:
-            print("Не удается скачать ссылки на уроки с основной страницы" + \
+            lessons == None
+        if lessons == None:
+            print("\nНе удается скачать ссылки на уроки с основной страницы" + \
                 "https://geekbrains.ru/education, возможные проблемы:\n" + \
-                "Нет подключения к интернету\nНе верный логин и/или пароль от GB"
+                "1. Нет подключения к интернету\n" + \
+                "2. Не верный логин и/или пароль от GB"
                 )
+            return False
         else:
-            print('Парсим страницу educations...')
-        lessons, chapters, interactives = parse.parse_courses()
+            print('Пропарсили страницу educations...')
         lessons_list = list()
         chapters_list = list()
         interactives_list = list()
