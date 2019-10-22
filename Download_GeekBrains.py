@@ -209,12 +209,11 @@ def main():
         )
     step = int(input('Что будем делать?(Введите цифру) '))
     if step != 2:
-        lessons = None
         try:
             parse = ParseGB(email, password)
             lessons, chapters, interactives = parse.parse_courses()
         except Exception as e:
-            lessons == None
+            lessons = None
         if lessons == None:
             print("\nНе удается скачать ссылки на уроки с основной страницы " +\
                 "https://geekbrains.ru/education, возможные проблемы:",
