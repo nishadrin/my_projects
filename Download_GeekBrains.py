@@ -81,7 +81,7 @@ class ParseGB():
 
         links = {"name_list": name_list, "links_list": links_list}
         course_name = soup.find("span", {"class": "course-title"}).text
-        lesson_name = soup.find("span", {"class": "lesson-header__title"}).text
+        lesson_name = soup.find("h3", {"class": "title"}).text
         comment = soup.find("div", {"class": "lesson-content__content"})
         if comment:
             comment = comment.text
@@ -235,7 +235,9 @@ if __name__ == '__main__':
         lesson_name = i['lesson_name']
         name_list = i['links']['name_list']
         links_lists = i['links']['links_list']
-        # Заменяем все "\" и "/" на "_", что бы при скачивании порграмма не считала, что это путь
+        # Заменяем все "\" и "/" на "_", что бы при скачивании порграмма
+        #
+        # не считала, что это путь
         course_name = re.sub(r'\\', "_", course_name)
         course_name = re.sub(r'/', "_", course_name)
         lesson_name = re.sub(r'\\', "_", lesson_name)
@@ -268,7 +270,10 @@ if __name__ == '__main__':
         names = download.name_file(links_name_list, links_list)
         n = 0
         while n+1 <= len(links_list):
-            download.create_or_download(os.path.abspath(f'GeekBrains/{course_name}/{lesson_name}/{names[n]}'), file2download = links_list[n])
+            download.create_or_download(os.path.abspath(
+                f'GeekBrains/{course_name}/{lesson_name}/{names[n]}'),
+                file2download = links_list[n]
+                )
             n += 1
 
     parse.close_session()
