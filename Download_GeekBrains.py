@@ -198,13 +198,14 @@ class DownloadGB():
 def main():
     email = input('Введите email от GB: ')
     password = input('Введите пароль от GB: ')
+    courses = os.path.abspath('courses.json')
     print(
-        '1 - Пропарсить и сохранить в json', '2 - Скачать из json',
+        '1 - Пропарсить и сохранить в json',
+        f'2 - Скачать из json (файл должен находится по пути: {courses})',
         '3 - Пропарсить и скачать (удаляется json файл)',
         '4-бесконечность - Пропарсить и скачать (сохранить json файл)', sep='\n'
         )
     step = int(input('Что будем делать?(Введите цифру) '))
-    courses = os.path.abspath('courses.json')
     if step != 2:
         try:
             parse = ParseGB(email, password)
