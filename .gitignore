@@ -2,3 +2,5 @@ GeekBrains/
 log.txt
 courses.json
 .run.sh.swp
+__pycache__/
+dwn_one.py
