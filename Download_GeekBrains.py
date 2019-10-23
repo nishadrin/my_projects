@@ -309,7 +309,11 @@ def main():
     parse.close_session()
     if step == 3:
         os.remove(courses)
-    print('Спасибо, за использование скрипта!')
 
 if __name__ == '__main__':
-    main()
+    if main():
+        print('Спасибо, за использование скрипта!')
+    else:
+        print('\nЖаль, что Вам не удлось воспользоваться скриптом.',
+            "По вопросами и предложениям можно писать в Телеграм: @nishadrin" +\
+            "(https://t.me/nishadrin)", sep='\n')
