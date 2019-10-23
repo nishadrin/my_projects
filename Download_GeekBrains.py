@@ -138,7 +138,7 @@ class DownloadGB():
 
     def save_urls(self, path, file2download):
         regex = os.getcwd() + "/GeekBrains\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()" +\
-        "[\]'\|]+\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()[\]'\|]+\/"
+            "[\]'\|]+\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()[\]'\|]+\/"
         path = re.search(regex, path)
         path = path.group(0) + 'Ссылки.txt'
         if not os.path.exists(path):
