@@ -258,9 +258,8 @@ def main():
         chapters_list = read_json['chapters']
         interactives_list = read_json['interactives']
     print('Скачваем материал...')
-    start_path = os.path.abspath('GeekBrains/')
     download = DownloadGB()
-    download.create_or_download(path=start_path)
+    download.create_or_download(os.path.abspath('GeekBrains/'))
     for i in lessons_list+chapters_list+interactives_list:
         course_name = i['course_name']
         lesson_name = i['lesson_name']
@@ -274,7 +273,6 @@ def main():
         lesson_name = re.sub(r'\\', "_", lesson_name)
         lesson_name = re.sub(r'/', "_", lesson_name)
         # Создаем папки
-        download.create_or_download(os.path.abspath('GeekBrains/'))
         download.create_or_download(os.path.abspath(
             f'GeekBrains/{course_name}/')
             )
@@ -309,7 +307,10 @@ def main():
     parse.close_session()
     if step == 3:
         os.remove(courses)
-    print('Спасибо, за использование скрипта!')
+    return True
 
 if __name__ == '__main__':
-    main()
+    if main():
+        print('Спасибо, за использование скрипта!')
+    else:
+        print('\nСожалеем, что не удалось воспользоваться скриптом, если возникнут сложности пишите в Telegram: @nishadrin (https://t.me/nishadrin)')
