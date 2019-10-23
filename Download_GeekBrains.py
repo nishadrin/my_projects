@@ -136,6 +136,19 @@ class DownloadGB():
     """
 
 
+    def save_urls(self, path, file2download):
+        regex = os.getcwd() + "/GeekBrains\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()" +\
+            "[\]'\|]+\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()[\]'\|]+\/"
+        path = re.search(regex, path)
+        path = path.group(0) + 'Ссылки.txt'
+        if not os.path.exists(path):
+            with open(path, "w") as file:
+                file.write(file2download)
+        else:
+            with open(path, "a") as file:
+                file.write('\n' + file2download)
+        print(f'Сохранили сслыки в файл: {path}')
+
     def download(self, path, file2download):
         request_url = requests.head(file2download)
         try:
@@ -144,13 +157,16 @@ class DownloadGB():
             connection = None
         if connection == 'close':
             print('Доступ к ресурсу запрещен')
+            self.save_urls(path, file2download)
             return 302
         try:
             content_type = request_url.headers['content-type']
         except Exception as e:
             content_type = None
-        if "html" in content_type:
-            if "docs.google.com" in file2download:
+        if content_type == None or "html" in content_type or \
+                'application/binary' in content_type:
+            if content_type != None and "drive.google.com" in file2download \
+                    or "docs.google.com" in file2download:
                 print("google sheets еще не умею скачивать, " + \
                     "один файл не скачался"
                     )
@@ -158,6 +174,8 @@ class DownloadGB():
                 print("Скачать не могу, так как это ссылка на веб " + \
                     "страницу, а не на файл"
                     )
+                self.save_urls(path, file2download)
+                # Сохранить в файл ссылки
         else:
             urllib.request.urlretrieve(file2download, path)
             print(f"Скачали файл {path}")
@@ -171,7 +189,7 @@ class DownloadGB():
                 print(f"Создана папка {path}")
 
             elif text != None:
-                with open(path, "w") as f:
+                with open(path, "w", encoding="utf-8") as f:
                     f.write(text)
                 print(f"Создан файл {path}")
 
@@ -311,6 +329,8 @@ def main():
 
 if __name__ == '__main__':
     if main():
-        print('Спасибо, за использование скрипта!')
+        print('Спасибо, за то, что воспользовались скриптом!')
     else:
-        print('\nСожалеем, что не удалось воспользоваться скриптом, если возникнут сложности пишите в Telegram: @nishadrin (https://t.me/nishadrin)')
+        print('\nЖаль, что Вам не удлось воспользоваться скриптом.',
+            "По вопросами и предложениям можно писать в Телеграм: @nishadrin" +\
+            "(https://t.me/nishadrin)", sep='\n')
