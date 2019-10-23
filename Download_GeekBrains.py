@@ -136,6 +136,20 @@ class DownloadGB():
     """
 
 
+    def save_urls(self, path, file2download):
+        regex = os.getcwd() + "/GeekBrains\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()[\]'\|]+\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()[\]'\|]+\/"
+        path = re.search(regex, path)
+        path = path.group(0) + 'Ссылки.txt'
+        print(path)
+        print(file2download)
+        if not os.path.exists(path):
+            with open(path, "w") as file:
+                file.write(file2download)
+        else:
+            with open(path, "a") as file:
+                file.write('\n' + file2download)
+        print(f'Сохранили сслыки в файл: {path}')
+
     def download(self, path, file2download):
         request_url = requests.head(file2download)
         try:
@@ -144,6 +158,7 @@ class DownloadGB():
             connection = None
         if connection == 'close':
             print('Доступ к ресурсу запрещен')
+            self.save_urls(path, file2download)
             return 302
         try:
             content_type = request_url.headers['content-type']
@@ -151,7 +166,8 @@ class DownloadGB():
             content_type = None
         if content_type == None or "html" in content_type or \
                 'application/binary' in content_type:
-            if content_type != None and ".google.com" in file2download:
+            if content_type != None and "drive.google.com" in file2download \
+                    or "docs.google.com" in file2download:
                 print("google sheets еще не умею скачивать, " + \
                     "один файл не скачался"
                     )
@@ -159,6 +175,7 @@ class DownloadGB():
                 print("Скачать не могу, так как это ссылка на веб " + \
                     "страницу, а не на файл"
                     )
+                self.save_urls(path, file2download)
                 # Сохранить в файл ссылки
         else:
             urllib.request.urlretrieve(file2download, path)
@@ -173,7 +190,7 @@ class DownloadGB():
                 print(f"Создана папка {path}")
 
             elif text != None:
-                with open(path, "w") as f:
+                with open(path, "w", encoding="utf-8") as f:
                     f.write(text)
                 print(f"Создан файл {path}")
 
