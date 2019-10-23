@@ -149,8 +149,8 @@ class DownloadGB():
             content_type = request_url.headers['content-type']
         except Exception as e:
             content_type = None
-        print(request_url.headers)
-        if content_type == None or "html" in content_type or 'application/binary' in content_type:
+        if content_type == None or "html" in content_type or \
+                'application/binary' in content_type:
             if content_type != None and ".google.com" in file2download:
                 print("google sheets еще не умею скачивать, " + \
                     "один файл не скачался"
