@@ -136,20 +136,22 @@ class DownloadGB():
     """
 
 
-    def save_urls(self, path, file2download):
-        regex = os.getcwd() + "/GeekBrains\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()" +\
-            "[\]'\|]+\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()[\]'\|]+\/"
-        path = re.search(regex, path)
-        path = path.group(0) + 'Ссылки.txt'
+    def save_urls(self, file2download, pwd_path):
+        path = pwd_path + 'Ссылки.txt'
         if not os.path.exists(path):
             with open(path, "w") as file:
                 file.write(file2download)
         else:
-            with open(path, "a") as file:
-                file.write('\n' + file2download)
+            with open(path, "r+") as file:
+                line_list = list()
+                for i in file.readline():
+                    line_list.append(i)
+                line_list = set(line_list)
+                for i in line_list:
+                    file.write('\n' + i)
         print(f'Сохранили сслыки в файл: {path}')
 
-    def download(self, path, file2download):
+    def download(self, path, file2download, pwd_path):
         request_url = requests.head(file2download)
         try:
             connection = request_url.headers['Connection']
@@ -157,7 +159,7 @@ class DownloadGB():
             connection = None
         if connection == 'close':
             print('Доступ к ресурсу запрещен')
-            # self.save_urls(path, file2download)
+            self.save_urls(file2download, pwd_path)
             return 302
         try:
             content_type = request_url.headers['content-type']
@@ -174,12 +176,12 @@ class DownloadGB():
                 print("Скачать не могу, так как это ссылка на веб " + \
                     "страницу, а не на файл"
                     )
-                # self.save_urls(path, file2download)
+                self.save_urls(file2download, pwd_path)
         else:
             urllib.request.urlretrieve(file2download, path)
             print(f"Скачали файл {path}")
 
-    def create_or_download(self, path, file2download=None, text=None):
+    def create_or_download(self, path, pwd_path=None, file2download=None, text=None):
         if os.path.exists(path):
             print(f'Уже существует {path}')
         else:
@@ -193,7 +195,7 @@ class DownloadGB():
                 print(f"Создан файл {path}")
 
             elif file2download != None:
-                self.download(path, file2download)
+                self.download(path, file2download, pwd_path)
 
     def name_file(self, links_name_list, links_list):
             n = 0
@@ -316,9 +318,14 @@ def main():
         names = download.name_file(links_name_list, links_list)
         n = 0
         while n+1 <= len(links_list):
-            download.create_or_download(os.path.abspath(
-                f'GeekBrains/{course_name}/{lesson_name}/{names[n]}'),
-                file2download = links_list[n]
+            download.create_or_download(
+                os.path.abspath(
+                    f'GeekBrains/{course_name}/{lesson_name}/{names[n]}'
+                    ),
+                file2download = links_list[n],
+                pwd_path = os.path.abspath(
+                    f'GeekBrains/{course_name}/{lesson_name}/'
+                    )
                 )
             n += 1
     parse.close_session()
