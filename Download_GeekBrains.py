@@ -169,9 +169,10 @@ class DownloadGB():
                 'application/binary' in content_type:
             if content_type != None and "drive.google.com" in file2download \
                     or "docs.google.com" in file2download:
-                print("google sheets еще не умею скачивать, " + \
-                    "один файл не скачался"
+                print("Скачать не могу, так как это ссылка на google sheets " + \
+                    f"страницу, а не на файл, сохранили сюда: {pwd_path}/"
                     )
+                self.save_urls(file2download, pwd_path)
             else:
                 print("Скачать не могу, так как это ссылка на веб " + \
                     "страницу, а не на файл"
