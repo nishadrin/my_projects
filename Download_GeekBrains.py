@@ -157,7 +157,7 @@ class DownloadGB():
             connection = None
         if connection == 'close':
             print('Доступ к ресурсу запрещен')
-            self.save_urls(path, file2download)
+            # self.save_urls(path, file2download)
             return 302
         try:
             content_type = request_url.headers['content-type']
@@ -174,8 +174,7 @@ class DownloadGB():
                 print("Скачать не могу, так как это ссылка на веб " + \
                     "страницу, а не на файл"
                     )
-                self.save_urls(path, file2download)
-                # Сохранить в файл ссылки
+                # self.save_urls(path, file2download)
         else:
             urllib.request.urlretrieve(file2download, path)
             print(f"Скачали файл {path}")
