@@ -139,8 +139,19 @@ class DownloadGB():
 
     def save_urls(self, file2download, pwd_path):
         path = pwd_path + '/Ссылки.txt'
+        lines = list()
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as file:
+                lines = [i.strip() for i in file.readlines()]
+                read_file = file.readlines()
+                for i in read_file:
+                    line = i.strip()
+                    lines.append(line)
+        lines.append(file2download)
+        lines = set(lines)
         with open(path, "w", encoding="utf-8") as file:
-            file.write(file2download + '\n')
+            for i in lines:
+                file.write(i + '\n')
         print(f'Сохранили сслыки в файл: {path}')
 
     def download(self, path, file2download, pwd_path):
