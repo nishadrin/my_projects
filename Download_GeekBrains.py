@@ -149,7 +149,7 @@ class DownloadGB():
         except Exception as e:
             request_url = None
         if request_url == None :
-            print("Скачать не могу, по непонятным причинам, ссылку сохранил")
+            print(f"{file2download} cкачать не могу, по непонятным причинам")
             self.save_urls(file2download, pwd_path)
             return False
         try:
@@ -157,7 +157,7 @@ class DownloadGB():
         except Exception as e:
             connection = None
         if connection == 'close':
-            print('Доступ к ресурсу запрещен')
+            print(f'Доступ к ресурсу {file2download} запрещен')
             self.save_urls(file2download, pwd_path)
             return False
         try:
@@ -169,12 +169,12 @@ class DownloadGB():
             if content_type != None and "drive.google.com" in file2download \
                     or "docs.google.com" in file2download:
                 print("Скачать не могу, так как это ссылка на google sheets " + \
-                    f"страницу, а не на файл, сохранили сюда: {pwd_path}/"
+                    f"страницу: {file2download}"
                     )
                 self.save_urls(file2download, pwd_path)
             else:
-                print("Скачать не могу, так как это ссылка на веб " + \
-                    "страницу, а не на файл"
+                print(f"Скачать не могу, так как это ссылка на веб " + \
+                    "страницу: {file2download}"
                     )
                 self.save_urls(file2download, pwd_path)
         else:
