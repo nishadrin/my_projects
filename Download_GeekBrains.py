@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# TODO оптимизировать скрипт, добавлением is_downloaded: True
 import re
 import json
 import os
@@ -137,22 +138,20 @@ class DownloadGB():
 
 
     def save_urls(self, file2download, pwd_path):
-        path = pwd_path + 'Ссылки.txt'
-        if not os.path.exists(path):
-            with open(path, "w") as file:
-                file.write(file2download)
-        else:
-            with open(path, "r+") as file:
-                line_list = list()
-                for i in file.readline():
-                    line_list.append(i)
-                line_list = set(line_list)
-                for i in line_list:
-                    file.write('\n' + i)
+        path = pwd_path + '/Ссылки.txt'
+        with open(path, "w", encoding="utf-8") as file:
+            file.write(file2download + '\n')
         print(f'Сохранили сслыки в файл: {path}')
 
     def download(self, path, file2download, pwd_path):
-        request_url = requests.head(file2download)
+        try:
+            request_url = requests.head(file2download)
+        except Exception as e:
+            request_url = None
+        if request_url == None :
+            print("Скачать не могу, по непонятным причинам, ссылку сохранил")
+            self.save_urls(file2download, pwd_path)
+            return False
         try:
             connection = request_url.headers['Connection']
         except Exception as e:
@@ -160,7 +159,7 @@ class DownloadGB():
         if connection == 'close':
             print('Доступ к ресурсу запрещен')
             self.save_urls(file2download, pwd_path)
-            return 302
+            return False
         try:
             content_type = request_url.headers['content-type']
         except Exception as e:
@@ -216,8 +215,6 @@ class DownloadGB():
             return names
 
 def main():
-    email = input('Введите email от GB: ')
-    password = input('Введите пароль от GB: ')
     courses = os.path.abspath('courses.json')
     print(
         '\n1 - Пропарсить и сохранить в json',
@@ -228,6 +225,9 @@ def main():
         'и места на жестком диске\n', sep='\n'
         )
     step = int(input('Что будем делать?(Введите цифру) '))
+    if not step == 2:
+        email = input('Введите email от GB: ')
+        password = input('Введите пароль от GB: ')
     if step != 2:
         try:
             parse = ParseGB(email, password)
@@ -325,7 +325,7 @@ def main():
                     ),
                 file2download = links_list[n],
                 pwd_path = os.path.abspath(
-                    f'GeekBrains/{course_name}/{lesson_name}/'
+                    f'GeekBrains/{course_name}/{lesson_name}'
                     )
                 )
             n += 1
