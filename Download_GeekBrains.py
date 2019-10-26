@@ -125,9 +125,10 @@ class ParseGB():
         filehtml_hw = self.c.get(link_dz)
         soup_hw = BeautifulSoup(filehtml_hw.content, "html.parser")
         dz = soup_hw.find("div", {"class": "homework-description"}).text
+        comment = None
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
-            "content_url": url, "links": links, "comment": None, "dz": dz
+            "content_url": url, "links": links, "comment": comment, "dz": dz
             }
         return dic
 
@@ -236,10 +237,9 @@ def main():
         'и места на жестком диске\n', sep='\n'
         )
     step = int(input('Что будем делать?(Введите цифру) '))
-    if not step == 2:
+    if step != 2:
         email = input('Введите email от GB: ')
         password = input('Введите пароль от GB: ')
-    if step != 2:
         try:
             parse = ParseGB(email, password)
             lessons, chapters, interactives = parse.parse_courses()
@@ -311,7 +311,6 @@ def main():
             f'GeekBrains/{course_name}/{lesson_name}/')
             )
         # Скачаиваем инфу
-        print(comment)
         if i['comment'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Важные объявление.txt'),
