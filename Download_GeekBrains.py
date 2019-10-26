@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# TODO оптимизировать скрипт, добавлением is_downloaded: True
 import re
 import json
 import os
@@ -124,9 +125,10 @@ class ParseGB():
         filehtml_hw = self.c.get(link_dz)
         soup_hw = BeautifulSoup(filehtml_hw.content, "html.parser")
         dz = soup_hw.find("div", {"class": "homework-description"}).text
+        comment = None
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
-            "content_url": url, "links": links, "dz": dz
+            "content_url": url, "links": links, "comment": comment, "dz": dz
             }
         return dic
 
@@ -136,29 +138,40 @@ class DownloadGB():
     """
 
 
-    def save_urls(self, path, file2download):
-        regex = os.getcwd() + "/GeekBrains\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()" +\
-            "[\]'\|]+\/[а-яА-Яa-zA-Z0-9_{} !,.+-_*()[\]'\|]+\/"
-        path = re.search(regex, path)
-        path = path.group(0) + 'Ссылки.txt'
-        if not os.path.exists(path):
-            with open(path, "w") as file:
-                file.write(file2download)
-        else:
-            with open(path, "a") as file:
-                file.write('\n' + file2download)
+    def save_urls(self, file2download, pwd_path):
+        path = pwd_path + '/Ссылки.txt'
+        lines = list()
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as file:
+                lines = [i.strip() for i in file.readlines()]
+                read_file = file.readlines()
+                for i in read_file:
+                    line = i.strip()
+                    lines.append(line)
+        lines.append(file2download)
+        lines = set(lines)
+        with open(path, "w", encoding="utf-8") as file:
+            for i in lines:
+                file.write(i + '\n')
         print(f'Сохранили сслыки в файл: {path}')
 
-    def download(self, path, file2download):
-        request_url = requests.head(file2download)
+    def download(self, path, file2download, pwd_path):
+        try:
+            request_url = requests.head(file2download)
+        except Exception as e:
+            request_url = None
+        if request_url == None :
+            print(f"{file2download} cкачать не могу, по непонятным причинам")
+            self.save_urls(file2download, pwd_path)
+            return False
         try:
             connection = request_url.headers['Connection']
         except Exception as e:
             connection = None
         if connection == 'close':
-            print('Доступ к ресурсу запрещен')
-            # self.save_urls(path, file2download)
-            return 302
+            print(f'Доступ к ресурсу {file2download} запрещен')
+            self.save_urls(file2download, pwd_path)
+            return False
         try:
             content_type = request_url.headers['content-type']
         except Exception as e:
@@ -167,19 +180,20 @@ class DownloadGB():
                 'application/binary' in content_type:
             if content_type != None and "drive.google.com" in file2download \
                     or "docs.google.com" in file2download:
-                print("google sheets еще не умею скачивать, " + \
-                    "один файл не скачался"
+                print("Скачать не могу, так как это ссылка на google sheets " + \
+                    f"страницу: {file2download}"
                     )
+                self.save_urls(file2download, pwd_path)
             else:
-                print("Скачать не могу, так как это ссылка на веб " + \
-                    "страницу, а не на файл"
+                print(f"Скачать не могу, так как это ссылка на веб " + \
+                    "страницу: {file2download}"
                     )
-                # self.save_urls(path, file2download)
+                self.save_urls(file2download, pwd_path)
         else:
             urllib.request.urlretrieve(file2download, path)
             print(f"Скачали файл {path}")
 
-    def create_or_download(self, path, file2download=None, text=None):
+    def create_or_download(self, path, pwd_path=None, file2download=None, text=None):
         if os.path.exists(path):
             print(f'Уже существует {path}')
         else:
@@ -193,7 +207,7 @@ class DownloadGB():
                 print(f"Создан файл {path}")
 
             elif file2download != None:
-                self.download(path, file2download)
+                self.download(path, file2download, pwd_path)
 
     def name_file(self, links_name_list, links_list):
             n = 0
@@ -213,8 +227,6 @@ class DownloadGB():
             return names
 
 def main():
-    email = input('Введите email от GB: ')
-    password = input('Введите пароль от GB: ')
     courses = os.path.abspath('courses.json')
     print(
         '\n1 - Пропарсить и сохранить в json',
@@ -226,6 +238,8 @@ def main():
         )
     step = int(input('Что будем делать?(Введите цифру) '))
     if step != 2:
+        email = input('Введите email от GB: ')
+        password = input('Введите пароль от GB: ')
         try:
             parse = ParseGB(email, password)
             lessons, chapters, interactives = parse.parse_courses()
@@ -316,9 +330,14 @@ def main():
         names = download.name_file(links_name_list, links_list)
         n = 0
         while n+1 <= len(links_list):
-            download.create_or_download(os.path.abspath(
-                f'GeekBrains/{course_name}/{lesson_name}/{names[n]}'),
-                file2download = links_list[n]
+            download.create_or_download(
+                os.path.abspath(
+                    f'GeekBrains/{course_name}/{lesson_name}/{names[n]}'
+                    ),
+                file2download = links_list[n],
+                pwd_path = os.path.abspath(
+                    f'GeekBrains/{course_name}/{lesson_name}'
+                    )
                 )
             n += 1
     parse.close_session()
