@@ -272,6 +272,7 @@ def main():
             print(f'Парсим ссылку {i}')
             dic = parse.parse_interactive(i)
             interactives_list.append(dic)
+        parse.close_session()
         # Сохраняем в файл json все данные по курсам
         list_json = {
             'lessons': lessons_list, 'chapters': chapters_list,
@@ -340,7 +341,6 @@ def main():
                     )
                 )
             n += 1
-    parse.close_session()
     if step == 3:
         os.remove(courses)
     return True
