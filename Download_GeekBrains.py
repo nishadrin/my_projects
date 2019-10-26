@@ -284,6 +284,9 @@ def main():
     if step == 1:
         return True
     if step == 2:
+        if not os.path.exists(courses):
+            print(f'\nНе вижу файл: {courses}')
+            return False
         with open(courses, "r", encoding="utf-8") as file:
             read_json = json.load(file)
         lessons_list = read_json['lessons']
