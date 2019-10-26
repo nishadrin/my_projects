@@ -322,12 +322,12 @@ def main():
         if i['comment'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Важные объявление.txt'),
-                text= i['comment']
+                text=i['comment']
                 )
         if i['dz'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Домашнее задание.txt'),
-                text= i['dz']
+                text=i['dz']
                 )
         links_list = list()
         for i in links_lists:
