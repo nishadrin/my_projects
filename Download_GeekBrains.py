@@ -127,7 +127,7 @@ class ParseGB():
         dz = soup_hw.find("div", {"class": "homework-description"}).text
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
-            "content_url": url, "links": links, "dz": dz
+            "content_url": url, "links": links, "comment": None, "dz": dz
             }
         return dic
 
@@ -311,6 +311,7 @@ def main():
             f'GeekBrains/{course_name}/{lesson_name}/')
             )
         # Скачаиваем инфу
+        print(comment)
         if i['comment'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Важные объявление.txt'),
