@@ -153,7 +153,7 @@ class DownloadGB():
         with open(path, "w", encoding="utf-8") as file:
             for i in lines:
                 file.write(i + '\n')
-        print(f'Сохранили сслыки в файл: {path}')
+        print(f'Сохранили сслыку в файл: {path}')
 
     def download(self, path, file2download, pwd_path):
         try:
