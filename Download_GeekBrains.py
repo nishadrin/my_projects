@@ -228,14 +228,23 @@ class DownloadGB():
 
 def main():
     courses = os.path.abspath('courses.json')
-    print(
+    main_menu = (
         '\n1 - Пропарсить и сохранить в json',
         f'2 - Скачать из json (файл должен находится по пути: {courses})',
         '3 - Пропарсить и скачать (удаляется json файл)',
         '4-бесконечность - Пропарсить и скачать (сохранить json файл)\n',
         'PS: Для скачивания материала может потребоваться много времени ' +\
-        'и места на жестком диске\n', sep='\n'
+        'и места на жестком диске\n',
         )
+    error_message = (
+        "\nНе удается скачать ссылки на уроки с основной страницы " +\
+        "https://geekbrains.ru/education, возможные проблемы:",
+        "1. Нет подключения к интернету",
+        "2. Не верный логин и/или пароль от GB",
+        "3. GB что то переделали на сайте, и надо редактировать скрипт",
+        )
+    for i in main_menu:
+        print(i)
     step = int(input('Что будем делать?(Введите цифру) '))
     if step != 2:
         email = input('Введите email от GB: ')
@@ -246,13 +255,8 @@ def main():
         except Exception as e:
             lessons = None
         if lessons == None:
-            print("\nНе удается скачать ссылки на уроки с основной страницы " +\
-                "https://geekbrains.ru/education, возможные проблемы:",
-                "1. Нет подключения к интернету",
-                "2. Не верный логин и/или пароль от GB",
-                "3. GB что то переделали на сайте, и надо редактировать скрипт",
-                sep='\n'
-                )
+            for i in error_message:
+                print(i)
             return False
         else:
             print('Пропарсили страницу educations...')
@@ -318,12 +322,12 @@ def main():
         if i['comment'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Важные объявление.txt'),
-                text= i['comment']
+                text=i['comment']
                 )
         if i['dz'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Домашнее задание.txt'),
-                text= i['dz']
+                text=i['dz']
                 )
         links_list = list()
         for i in links_lists:
