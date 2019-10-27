@@ -237,7 +237,7 @@ def main():
         '1 - Пропарсить и сохранить в json',
         f'2 - Скачать из json (файл должен находится по пути: {courses})',
         '3 - Пропарсить и скачать (удаляется json файл)',
-        '4-бесконечность - Пропарсить и скачать (сохранить json файл)\n',
+        '>4 - Пропарсить и скачать (сохранить json файл)\n',
         'PS: Для скачивания материала может потребоваться много времени ' +\
         'и места на жестком диске\n',
         ]
@@ -249,7 +249,7 @@ def main():
         "3. GB что то переделали на сайте, и надо редактировать скрипт",
         ]
     if os.path.exists(courses):
-        main_menu.insert(0, "0. Продолжить скачивать",)
+        main_menu.insert(0, "0 - Продолжить скачивать",)
     print()
     for i in main_menu:
         print(i)
@@ -258,6 +258,7 @@ def main():
         print()
         email = input('Введите email от GB: ')
         password = input('Введите пароль от GB: ')
+        print()
         try:
             parse = ParseGB(email, password)
             lessons, chapters, interactives = parse.parse_courses()
