@@ -316,7 +316,6 @@ def main():
         name_list = i['links']['name_list']
         links_lists = i['links']['links_list']
         # заменяем все "\" и "/" на "_", что бы при скачивании порграмма
-        #
         # не считала, что это путь
         course_name = re.sub(r'\\', "_", course_name)
         course_name = re.sub(r'/', "_", course_name)
