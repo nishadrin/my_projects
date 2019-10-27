@@ -189,7 +189,7 @@ class DownloadGB():
                 self.save_urls(file2download, pwd_path)
             else:
                 print(f"Скачать не могу, так как это ссылка на веб " + \
-                    "страницу: {file2download}"
+                    f"страницу: {file2download}"
                     )
                 self.save_urls(file2download, pwd_path)
         else:
@@ -199,6 +199,8 @@ class DownloadGB():
     def create_or_download(self, path, pwd_path=None, file2download=None, text=None):
         if os.path.exists(path):
             print(f'Уже существует {path}')
+        elif os.path.exists(f'{pwd_path}/Ссылки.txt'):
+            print(f'Уже существует {pwd_path}/Ссылки.txt')
         else:
             if file2download==None and text==None:
                 os.mkdir(path)
