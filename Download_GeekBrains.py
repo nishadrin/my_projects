@@ -101,7 +101,7 @@ class ParseGB():
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
             "content_url": url, "comment": comment, "links": links,
-            "dz": dz
+            "dz": dz, "is_downloaded": False
             }
         return dic
 
@@ -128,7 +128,8 @@ class ParseGB():
         comment = None
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
-            "content_url": url, "links": links, "comment": comment, "dz": dz
+            "content_url": url, "links": links, "comment": comment, "dz": dz,
+            "is_downloaded": False
             }
         return dic
 
@@ -228,21 +229,24 @@ class DownloadGB():
 
 def main():
     courses = os.path.abspath('courses.json')
-    main_menu = (
-        '\n1 - Пропарсить и сохранить в json',
+    main_menu = [
+        '1 - Пропарсить и сохранить в json',
         f'2 - Скачать из json (файл должен находится по пути: {courses})',
         '3 - Пропарсить и скачать (удаляется json файл)',
         '4-бесконечность - Пропарсить и скачать (сохранить json файл)\n',
         'PS: Для скачивания материала может потребоваться много времени ' +\
         'и места на жестком диске\n',
-        )
-    error_message = (
+        ]
+    error_message = [
         "\nНе удается скачать ссылки на уроки с основной страницы " +\
         "https://geekbrains.ru/education, возможные проблемы:",
         "1. Нет подключения к интернету",
         "2. Не верный логин и/или пароль от GB",
         "3. GB что то переделали на сайте, и надо редактировать скрипт",
-        )
+        ]
+    if os.path.exists(courses):
+        main_menu.insert(0, "0. Продолжить скачивать",)
+    print()
     for i in main_menu:
         print(i)
     step = int(input('Что будем делать?(Введите цифру) '))
@@ -300,6 +304,8 @@ def main():
     download = DownloadGB()
     download.create_or_download(os.path.abspath('GeekBrains/'))
     for i in lessons_list+chapters_list+interactives_list:
+        if step == 0 and i['is_downloaded']:
+            continue
         course_name = i['course_name']
         lesson_name = i['lesson_name']
         name_list = i['links']['name_list']
@@ -348,6 +354,7 @@ def main():
                     )
                 )
             n += 1
+        i['is_downloaded'] = True
     if step == 3:
         os.remove(courses)
     return True
