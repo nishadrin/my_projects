@@ -306,30 +306,39 @@ def main():
     download = DownloadGB()
     download.create_or_download(os.path.abspath('GeekBrains/'))
     for i in lessons_list+chapters_list+interactives_list:
-        if step == 0 and i['is_downloaded']:
-            print(f'{i["content_url"]} уже был скачен ранее, если скачен не корректно, ' + \
-                'удалите файлы с компьютера и при старте нажмите 2'
-                )
-            continue
+        print()
         course_name = i['course_name']
         lesson_name = i['lesson_name']
         name_list = i['links']['name_list']
         links_lists = i['links']['links_list']
-        # Заменяем все "\" и "/" на "_", что бы при скачивании порграмма
+        # заменяем все "\" и "/" на "_", что бы при скачивании порграмма
         #
         # не считала, что это путь
         course_name = re.sub(r'\\', "_", course_name)
         course_name = re.sub(r'/', "_", course_name)
         lesson_name = re.sub(r'\\', "_", lesson_name)
         lesson_name = re.sub(r'/', "_", lesson_name)
-        # Создаем папки
+        # продолжить скачивание (0)
+        if step == 0 and i['is_downloaded']:
+            way_path = f'GeekBrains/{course_name}/{lesson_name}/'
+            downloaded_message = (
+                f'Курс {i["content_url"]} уже был скачен ранее, если ' + \
+                'скачен не корректно или не скачен (1 шаг пропустить):',
+                f'1. удалите файлы с компьютера по пути: {way_path}',
+                '2. и в начале использования скрипта введите цифру 2'
+                )
+            print()
+            for i in downloaded_message:
+                print(i)
+            continue
+        # создаем папки
         download.create_or_download(os.path.abspath(
             f'GeekBrains/{course_name}/')
             )
         download.create_or_download(os.path.abspath(
             f'GeekBrains/{course_name}/{lesson_name}/')
             )
-        # Скачаиваем инфу
+        # скачаиваем инфу
         if i['comment'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Важные объявление.txt'),
@@ -360,7 +369,11 @@ def main():
                 )
             n += 1
         i['is_downloaded'] = True
-    list_save = {'lessons': lessons_list, 'chapters': chapters_list, 'interactives': interactives_list}
+    list_save = {
+        'lessons': lessons_list,
+        'chapters': chapters_list,
+        'interactives': interactives_list
+        }
     with open(courses, "w", encoding="utf-8") as file:
         file.write(json.dumps(list_save, ensure_ascii=False))
     if step == 3:
