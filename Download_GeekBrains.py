@@ -188,7 +188,7 @@ class DownloadGB():
                     )
                 self.save_urls(file2download, pwd_path)
             else:
-                print(f"Скачать не могу, так как это ссылка на веб " + \
+                print("Скачать не могу, так как это ссылка на веб " + \
                     f"страницу: {file2download}"
                     )
                 self.save_urls(file2download, pwd_path)
