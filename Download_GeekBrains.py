@@ -98,10 +98,11 @@ class ParseGB():
                 dz = None
         else:
             dz = None
+        is_downloaded = False
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
             "content_url": url, "comment": comment, "links": links,
-            "dz": dz
+            "dz": dz, "is_downloaded": is_downloaded
             }
         return dic
 
@@ -126,9 +127,11 @@ class ParseGB():
         soup_hw = BeautifulSoup(filehtml_hw.content, "html.parser")
         dz = soup_hw.find("div", {"class": "homework-description"}).text
         comment = None
+        is_downloaded = False
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
-            "content_url": url, "links": links, "comment": comment, "dz": dz
+            "content_url": url, "links": links, "comment": comment, "dz": dz,
+            "is_downloaded": is_downloaded
             }
         return dic
 
@@ -186,7 +189,7 @@ class DownloadGB():
                 self.save_urls(file2download, pwd_path)
             else:
                 print(f"Скачать не могу, так как это ссылка на веб " + \
-                    "страницу: {file2download}"
+                    f"страницу: {file2download}"
                     )
                 self.save_urls(file2download, pwd_path)
         else:
@@ -196,6 +199,8 @@ class DownloadGB():
     def create_or_download(self, path, pwd_path=None, file2download=None, text=None):
         if os.path.exists(path):
             print(f'Уже существует {path}')
+        elif os.path.exists(f'{pwd_path}/Ссылки.txt'):
+            print(f'Уже существует {pwd_path}/Ссылки.txt')
         else:
             if file2download==None and text==None:
                 os.mkdir(path)
@@ -228,25 +233,28 @@ class DownloadGB():
 
 def main():
     courses = os.path.abspath('courses.json')
-    main_menu = (
-        '\n1 - Пропарсить и сохранить в json',
+    main_menu = [
+        '1 - Пропарсить и сохранить в json',
         f'2 - Скачать из json (файл должен находится по пути: {courses})',
         '3 - Пропарсить и скачать (удаляется json файл)',
         '4-бесконечность - Пропарсить и скачать (сохранить json файл)\n',
         'PS: Для скачивания материала может потребоваться много времени ' +\
         'и места на жестком диске\n',
-        )
-    error_message = (
+        ]
+    error_message = [
         "\nНе удается скачать ссылки на уроки с основной страницы " +\
         "https://geekbrains.ru/education, возможные проблемы:",
         "1. Нет подключения к интернету",
         "2. Не верный логин и/или пароль от GB",
         "3. GB что то переделали на сайте, и надо редактировать скрипт",
-        )
+        ]
+    if os.path.exists(courses):
+        main_menu.insert(0, "0. Продолжить скачивать",)
+    print()
     for i in main_menu:
         print(i)
     step = int(input('Что будем делать?(Введите цифру) '))
-    if step != 2:
+    if step != 2 and step != 0:
         email = input('Введите email от GB: ')
         password = input('Введите пароль от GB: ')
         try:
@@ -287,7 +295,7 @@ def main():
         print(f'Сохранили курсы в файл: {courses}')
     if step == 1:
         return True
-    if step == 2:
+    if step == 2 or step == 0:
         if not os.path.exists(courses):
             print(f'\nНе вижу файл: {courses}')
             return False
@@ -300,25 +308,39 @@ def main():
     download = DownloadGB()
     download.create_or_download(os.path.abspath('GeekBrains/'))
     for i in lessons_list+chapters_list+interactives_list:
+        print()
         course_name = i['course_name']
         lesson_name = i['lesson_name']
         name_list = i['links']['name_list']
         links_lists = i['links']['links_list']
-        # Заменяем все "\" и "/" на "_", что бы при скачивании порграмма
+        # заменяем все "\" и "/" на "_", что бы при скачивании порграмма
         #
         # не считала, что это путь
         course_name = re.sub(r'\\', "_", course_name)
         course_name = re.sub(r'/', "_", course_name)
         lesson_name = re.sub(r'\\', "_", lesson_name)
         lesson_name = re.sub(r'/', "_", lesson_name)
-        # Создаем папки
+        # продолжить скачивание (0)
+        if step == 0 and i['is_downloaded']:
+            way_path = f'GeekBrains/{course_name}/{lesson_name}/'
+            downloaded_message = (
+                f'Курс {i["content_url"]} уже был скачен ранее, если ' + \
+                'скачен не корректно или не скачен (1 шаг пропустить):',
+                f'1. удалите файлы с компьютера по пути: {way_path}',
+                '2. и в начале использования скрипта введите цифру 2'
+                )
+            print()
+            for i in downloaded_message:
+                print(i)
+            continue
+        # создаем папки
         download.create_or_download(os.path.abspath(
             f'GeekBrains/{course_name}/')
             )
         download.create_or_download(os.path.abspath(
             f'GeekBrains/{course_name}/{lesson_name}/')
             )
-        # Скачаиваем инфу
+        # скачаиваем инфу
         if i['comment'] != None:
             download.create_or_download(os.path.abspath(
                 f'GeekBrains/{course_name}/{lesson_name}/Важные объявление.txt'),
@@ -330,11 +352,11 @@ def main():
                 text=i['dz']
                 )
         links_list = list()
-        for i in links_lists:
-            links_list.append(i)
+        for n in links_lists:
+            links_list.append(n)
         links_name_list = list()
-        for i in name_list:
-            links_name_list.append(i)
+        for n in name_list:
+            links_name_list.append(n)
         names = download.name_file(links_name_list, links_list)
         n = 0
         while n+1 <= len(links_list):
@@ -348,6 +370,14 @@ def main():
                     )
                 )
             n += 1
+        i['is_downloaded'] = True
+    list_save = {
+        'lessons': lessons_list,
+        'chapters': chapters_list,
+        'interactives': interactives_list
+        }
+    with open(courses, "w", encoding="utf-8") as file:
+        file.write(json.dumps(list_save, ensure_ascii=False))
     if step == 3:
         os.remove(courses)
     return True
