@@ -49,13 +49,11 @@ class ParseGB():
         soup_url_2_parse = BeautifulSoup(filehtml.content, "html.parser")
         temp_save_test = os.path.abspath('GeekBrains/test.html')
         info_url_2_parse = soup_url_2_parse.find(
-            'script',
-            {"data-component-name": "EducationPage"}
+            'script', {"data-component-name": "EducationPage"}
             ).text
         json_all_curses = json.loads(info_url_2_parse)
         webinars_and_interactives = json_all_curses['data']['lessons']
         videos = json_all_curses['data']['chapters']
-        temp_file_save = os.path.abspath('GeekBrains/temp_file.json')
         interactives_urls = list()
         webinars_urls = list()
         videos_urls = list()
@@ -66,7 +64,6 @@ class ParseGB():
                     )
             elif "/lessons/" in value['link']:
                 webinars_urls.append(f"https://geekbrains.ru{value['link']}")
-
         for key, value in videos.items():
             videos_urls.append(f"https://geekbrains.ru{value['link']}")
         return webinars_urls, videos_urls, interactives_urls
@@ -79,7 +76,6 @@ class ParseGB():
         for i in soup.findAll("li", {"class": "lesson-contents__list-item"}):
             links_list.append(i.find("a")['href'])
             name_list.append(i.find("a").text)
-
         links = {"name_list": name_list, "links_list": links_list}
         course_name = soup.find("span", {"class": "course-title"}).text
         lesson_name = soup.find("h3", {"class": "title"}).text
