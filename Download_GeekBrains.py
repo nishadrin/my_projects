@@ -98,10 +98,11 @@ class ParseGB():
                 dz = None
         else:
             dz = None
+        is_downloaded = False
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
             "content_url": url, "comment": comment, "links": links,
-            "dz": dz, "is_downloaded": False
+            "dz": dz, "is_downloaded": is_downloaded
             }
         return dic
 
@@ -126,10 +127,11 @@ class ParseGB():
         soup_hw = BeautifulSoup(filehtml_hw.content, "html.parser")
         dz = soup_hw.find("div", {"class": "homework-description"}).text
         comment = None
+        is_downloaded = False
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
             "content_url": url, "links": links, "comment": comment, "dz": dz,
-            "is_downloaded": False
+            "is_downloaded": is_downloaded
             }
         return dic
 
@@ -250,7 +252,7 @@ def main():
     for i in main_menu:
         print(i)
     step = int(input('Что будем делать?(Введите цифру) '))
-    if step != 2:
+    if step != 2 and step != 0:
         email = input('Введите email от GB: ')
         password = input('Введите пароль от GB: ')
         try:
@@ -291,7 +293,7 @@ def main():
         print(f'Сохранили курсы в файл: {courses}')
     if step == 1:
         return True
-    if step == 2:
+    if step == 2 or step == 0:
         if not os.path.exists(courses):
             print(f'\nНе вижу файл: {courses}')
             return False
@@ -305,6 +307,9 @@ def main():
     download.create_or_download(os.path.abspath('GeekBrains/'))
     for i in lessons_list+chapters_list+interactives_list:
         if step == 0 and i['is_downloaded']:
+            print(f'{i["content_url"]} уже был скачен ранее, если скачен не корректно, ' + \
+                'удалите файлы с компьютера и при старте нажмите 2'
+                )
             continue
         course_name = i['course_name']
         lesson_name = i['lesson_name']
@@ -336,11 +341,11 @@ def main():
                 text=i['dz']
                 )
         links_list = list()
-        for i in links_lists:
-            links_list.append(i)
+        for n in links_lists:
+            links_list.append(n)
         links_name_list = list()
-        for i in name_list:
-            links_name_list.append(i)
+        for n in name_list:
+            links_name_list.append(n)
         names = download.name_file(links_name_list, links_list)
         n = 0
         while n+1 <= len(links_list):
@@ -355,6 +360,9 @@ def main():
                 )
             n += 1
         i['is_downloaded'] = True
+    list_save = {'lessons': lessons_list, 'chapters': chapters_list, 'interactives': interactives_list}
+    with open(courses, "w", encoding="utf-8") as file:
+        file.write(json.dumps(list_save, ensure_ascii=False))
     if step == 3:
         os.remove(courses)
     return True
