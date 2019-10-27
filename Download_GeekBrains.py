@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# TODO оптимизировать скрипт, добавлением is_downloaded: True
+
 import re
 import json
 import os
