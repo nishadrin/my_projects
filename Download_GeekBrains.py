@@ -131,6 +131,17 @@ class ParseGB():
             }
         return dic
 
+    def parse_many_courses(self, courses):
+        _courses_list = list()
+        for i in courses:
+            print(f'Парсим ссылку {i}')
+            if 'lessons' in i or 'chapters' in i:
+                _one_course = self.parse_lesson_or_chapter(i)
+            if 'study_groups' in i:
+                _one_course = self.parse_interactive(i)
+            _courses_list.append(_one_course)
+        return _courses_list
+
 class DownloadGB():
     """docstring for DownloadGB.
 
@@ -266,22 +277,11 @@ def main():
             return False
         else:
             print('Пропарсили страницу educations...')
-        lessons_list = list()
-        chapters_list = list()
-        interactives_list = list()
+        print('*' * 50)
         print('Парсим каждый урок по отдельности:')
-        for i in lessons:
-            print(f'Парсим ссылку {i}')
-            dic = parse.parse_lesson_or_chapter(i)
-            lessons_list.append(dic)
-        for i in chapters:
-            print(f'Парсим ссылку {i}')
-            dic = parse.parse_lesson_or_chapter(i)
-            chapters_list.append(dic)
-        for i in interactives:
-            print(f'Парсим ссылку {i}')
-            dic = parse.parse_interactive(i)
-            interactives_list.append(dic)
+        lessons_list = parse.parse_many_courses(lessons)
+        chapters_list = parse.parse_many_courses(chapters)
+        interactives_list = parse.parse_many_courses(interactives)
         parse.close_session()
         # Сохраняем в файл json все данные по курсам
         list_json = {
