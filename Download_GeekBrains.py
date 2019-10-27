@@ -246,15 +246,15 @@ def main():
         ]
     if os.path.exists(courses):
         main_menu.insert(0, "0 - Продолжить скачивать",)
-    print()
+    print('*' * 50)
     for i in main_menu:
         print(i)
     step = int(input('Что будем делать?(Введите цифру) '))
     if step != 2 and step != 0:
-        print()
+        print('*' * 50)
         email = input('Введите email от GB: ')
         password = input('Введите пароль от GB: ')
-        print()
+        print('*' * 50)
         try:
             parse = ParseGB(email, password)
             lessons, chapters, interactives = parse.parse_courses()
@@ -306,7 +306,7 @@ def main():
     download = DownloadGB()
     download.create_or_download(os.path.abspath('GeekBrains/'))
     for i in lessons_list+chapters_list+interactives_list:
-        print()
+        print('*' * 50)
         course_name = i['course_name']
         lesson_name = i['lesson_name']
         name_list = i['links']['name_list']
@@ -326,7 +326,7 @@ def main():
                 f'1. удалите файлы с компьютера по пути: {way_path}',
                 '2. и в начале использования скрипта введите цифру 2'
                 )
-            print()
+            print('*' * 50)
             for i in downloaded_message:
                 print(i)
             continue
