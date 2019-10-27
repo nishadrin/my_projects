@@ -255,6 +255,7 @@ def main():
         print(i)
     step = int(input('Что будем делать?(Введите цифру) '))
     if step != 2 and step != 0:
+        print()
         email = input('Введите email от GB: ')
         password = input('Введите пароль от GB: ')
         try:
