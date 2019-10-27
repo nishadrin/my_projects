@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# TODO оптимизировать скрипт, добавлением is_downloaded: True
+
 import re
 import json
 import os
@@ -188,7 +188,7 @@ class DownloadGB():
                     )
                 self.save_urls(file2download, pwd_path)
             else:
-                print(f"Скачать не могу, так как это ссылка на веб " + \
+                print("Скачать не могу, так как это ссылка на веб " + \
                     f"страницу: {file2download}"
                     )
                 self.save_urls(file2download, pwd_path)
