@@ -8,45 +8,63 @@ import urllib.request
 import requests
 from bs4 import BeautifulSoup
 
+_SEPARATOR = '*' * 50
+JSON_COURSES_PATH = os.path.abspath('courses.json')
+MAIN_PATH = os.path.abspath('GeekBrains')
+MAIN_URL = "https://geekbrains.ru"
+COURSES_URL = "https://geekbrains.ru/education"
+MAIN_MENU = [
+    '1 - Пропарсить и сохранить в json',
+    '2 - Скачать из json (файл должен находится по пути:' + \
+        f'{COURSES_URL})',
+    '3 - Пропарсить и скачать (удаляется json файл)',
+    '>4 - Пропарсить и скачать (сохранить json файл)\n',
+    'PS: Для скачивания материала может потребоваться много времени' + \
+    ' и места на жестком диске',
+    ]
+ERROR_MESSAGES = [
+    f"Не удается скачать ссылки на уроки с основной страницы \
+    {COURSES_URL}, возможные проблемы:",
+    "1. Нет подключения к интернету",
+    "2. Не верный логин и/или пароль от GB",
+    "3. GB что то переделали на сайте, и надо редактировать скрипт",
+    ]
+
+
+def write_2_json_file(path, courses):
+    with open(path, "w", encoding="utf-8") as file:
+        file.write(json.dumps(courses, ensure_ascii=False))
+    return True
+
+def read_lines_from_file(path):
+    lines = []
+    with open(path, "r", encoding="utf-8") as file:
+        [lines.append(i.strip()) for i in file.readlines()]
+    return lines
+
+def write_lines_in_file(path, lines):
+    with open(path, "w", encoding="utf-8") as file:
+        [file.writelines(i) for i in lines]
+    return True
+
+def save_text_in_file(path, text):
+    with open(path, "w", encoding="utf-8") as file:
+        file.write(text)
+    return True
 
 class GoParseGB():
     def __init__(self):
-        # init variables
         self._continue_download = "0 - Продолжить скачивать"
-        self._courses_path = os.path.abspath('courses.json')
-        self._separator = '*' * 50
-        self._main_url = "https://geekbrains.ru"
-        self._url_courses = "https://geekbrains.ru/education"
-        self._main_path = os.path.abspath('GeekBrains')
-        self.error_messages = [
-            "Не удается скачать ссылки на уроки с основной страницы " +\
-            f"{self._url_courses}, возможные проблемы:",
-            "1. Нет подключения к интернету",
-            "2. Не верный логин и/или пароль от GB",
-            "3. GB что то переделали на сайте, и надо редактировать скрипт",
-            ]
-        self._main_menu = [
-            '1 - Пропарсить и сохранить в json',
-            '2 - Скачать из json (файл должен находится по пути:' + \
-                f'{self._url_courses})',
-            '3 - Пропарсить и скачать (удаляется json файл)',
-            '>4 - Пропарсить и скачать (сохранить json файл)\n',
-            'PS: Для скачивания материала может потребоваться много времени' + \
-            ' и места на жестком диске',
-            ]
-
-
-    def is_courses_path_exists(self):
-        return os.path.exists(self._courses_path)
 
     def start(self):
-        if self.is_courses_path_exists():
-            self._main_menu.insert(0, self._continue_download,)
-        print(self._separator)
-        for choice in self._main_menu:
+        if os.path.exists(JSON_COURSES_PATH):
+            MAIN_MENU.insert(0, self._continue_download,)
+        print(_SEPARATOR)
+
+        for choice in MAIN_MENU:
             print(choice)
         _step = int(input('Что будем делать?(Введите цифру) '))
-        print(self._separator)
+        print(_SEPARATOR)
         if _step != 2 and _step != 0:
             _authorization = self.check_authorization()
             _courses_json = self.parsing(_authorization)
@@ -54,12 +72,12 @@ class GoParseGB():
         if _step == 1:
             return True
         if _step == 2 or _step == 0:
-            if not self.is_courses_path_exists():
-                print(f'\nНе вижу файл: {self._courses_path}')
+            if not os.path.exists(JSON_COURSES_PATH):
+                print(f'\nНе вижу файл: {JSON_COURSES_PATH}')
                 return False
-            with open(self._courses_path, "r", encoding="utf-8") as file:
+            with open(JSON_COURSES_PATH, "r", encoding="utf-8") as file:
                 _courses_json = json.load(file)
-        print(self._separator)
+        print(_SEPARATOR)
         print('Скачваем материал...')
         _lessons_list = _courses_json['lessons']
         _chapters_list = _courses_json['chapters']
@@ -70,7 +88,7 @@ class GoParseGB():
         else:
             self.downloading(_courses_list)
         if _step == 3:
-            os.remove(self._courses_path)
+            os.remove(JSON_COURSES_PATH)
         return True
 
     def check_authorization(self):
@@ -80,33 +98,25 @@ class GoParseGB():
         except Exception as AuthorizationError:
             _authorization = False
         if not _authorization:
-            for error in self.error_messages:
+            for error in ERROR_MESSAGES:
                 print(error)
         return _authorization
 
-    def login(cls):
+    def login():
         _email = input('Введите email от GB: ')
         _password = input('Введите пароль от GB: ')
         return _email, _password
 
     def authorization(self, _email, _password):
-        _authorization = ParseGB(
-            _email, _password, _separator=self._separator,
-            _main_url=self._main_url, _url_courses=self._url_courses,
-            _main_path=self._main_path, _courses_path=self._courses_path,
-            )
+        _authorization = ParseGB(_email, _password)
         return _authorization
 
-    def parsing(cls, _authorization):
+    def parsing(_authorization):
         _authorization.parse()
         return True
 
     def downloading(self, _courses_list, step=1):
-        _download = DownloadGB(
-            _separator=self._separator, _main_url=self._main_url,
-            _url_courses=self._url_courses, _main_path=self._main_path,
-             _courses_path=self._courses_path,
-            )
+        _download = DownloadGB()
         _download.download(courses=_courses_list, step=step)
         return True
 
@@ -115,23 +125,21 @@ class ParseGB():
     """docstring for parse_GB
 
     """
+    __save_in_file = 'Сохранили в файл:'
+    __parse_one_lesson = 'Парсим каждый урок по отдельности:'
+    __parse_educ_url = 'Парсим страницу educations...'
+    __parse_educ_url_err = f'Не удалось пропарсить страницу {COURSES_URL}'
+    __parse_url = 'Парсим ссылку'
+    __parse_vid_web_err = 'Не удалось пропарсить видео/вебинары'
+    __parse_inter_err = 'Не удалось пропарсить страницу интерактивы'
 
-
-    # инициируем авторизированную сессию
     def __init__(
-        self, _email, _password, _separator, _main_url, _url_courses,
-        _main_path, _courses_path
-        ):
+        self, _email, _password):
         self._email = _email
         self._password = _password
-        self._separator = _separator
-        self._main_url = _main_url
-        self._url_courses = _url_courses
-        self._main_path = _main_path
-        self._courses_path = _courses_path
 
         # prepare to authorization
-        self.url = f"{self._main_url}/login"
+        self.url = f"{MAIN_URL}/login"
         self.connect = requests.Session()
         self.html = self.connect.get(self.url,verify=True)
         self.soup = BeautifulSoup(self.html.content, "html.parser")
@@ -146,14 +154,13 @@ class ParseGB():
             "user[remember_me]": "0"
             }
         self.connect.post(
-            self._main_url,
+            MAIN_URL,
             data=self.login_data,
-            headers={"Referer": f"{self._main_url}/login"}
+            headers={"Referer": f"{MAIN_URL}/login"}
             )
 
     def close_session(self):
         self.connect.close()
-
 
     def is_study_groups(self, url):
         if "study_groups" in url:
@@ -170,16 +177,18 @@ class ParseGB():
             return True
         return False
 
+
     def parse(self):
         _courses = self.parse_lessons()
-        self.write_2_json_file(path=self._courses_path, courses=_courses)
+        write_2_json_file(path=JSON_COURSES_PATH, courses=_courses)
+        print(f'{__save_in_file} {JSON_COURSES_PATH}')
         return True
 
     def parse_lessons(self):
         _lessons, _chapters, _interactives = self.check_parse_courses()
         if not _lessons:
             return False
-        print(self._separator, 'Парсим каждый урок по отдельности:', sep='\n')
+        print(_SEPARATOR, __parse_one_lesson, sep='\n')
         _lessons_list = self.parse_many_courses(_lessons)
         _chapters_list = self.parse_many_courses(_chapters)
         _interactives_list = self.parse_many_courses(_interactives)
@@ -189,42 +198,36 @@ class ParseGB():
             }
         return _courses_dict
 
-    def write_2_json_file(cls, path, courses):
-        with open(path, "w", encoding="utf-8") as file:
-            file.write(json.dumps(courses, ensure_ascii=False))
-        print(f'Сохранили в файл: {path}')
-
     def check_parse_courses(self):
-        print(self._separator, 'Парсим страницу educations...', sep='\n')
+        print(_SEPARATOR, __parse_educ_url, sep='\n')
         try:
             _lessons, _chapters, _interactives = self.parse_courses()
         except Exception as EducationParseError:
-            print(f'Не удалось пропарсить страницу {self._url_courses}')
+            print(_SEPARATOR, __parse_educ_url_err, sep='\n')
             return False, False, False
         return _lessons, _chapters, _interactives
 
     def parse_many_courses(self, courses):
-        _courses_list = list()
+        _courses_list = []
         for i in courses:
-            print(f'Парсим ссылку {i}')
+            print(f'{__parse_url} {i}')
             if 'lessons' in i or 'chapters' in i:
                 try:
                     _one_course = self.parse_lesson_or_chapter(i)
                 except Exception as LessonChapterError:
-                    print('Не удалось пропарсить страницу видео/вебинары')
+                    print(__parse_vid_web_err)
                     return False
             if 'study_groups' in i:
                 try:
                     _one_course = self.parse_interactive(i)
                 except Exception as InteractiveError:
-                    print('Не удалось пропарсить страницу интерактивы')
+                    print(__parse_inter_err)
                     return False
             _courses_list.append(_one_course)
         return _courses_list
 
-    # Получаем ссылки на доступные уроки, вебинары, интерактивы
     def parse_courses(self):
-        _filehtml = self.connect.get(self._url_courses)
+        _filehtml = self.connect.get(COURSES_URL)
         _soup_all_courses = BeautifulSoup(_filehtml.content, "html.parser")
         _find_json_courses = _soup_all_courses.find(
             'script', {"data-component-name": "EducationPage"}
@@ -232,25 +235,25 @@ class ParseGB():
         _json_courses = json.loads(_find_json_courses)
         _webinars_and_interactives = _json_courses['data']['lessons']
         _videos = _json_courses['data']['chapters']
-        _interactives_urls = list()
-        _webinars_urls = list()
-        _videos_urls = list()
+        _interactives_urls = []
+        _webinars_urls = []
+        _videos_urls = []
         for key, value in _webinars_and_interactives.items():
             if self.is_study_groups(value['link']):
                 _interactives_urls.append(
-                    f"{self._main_url}/{value['link']}/videos/{value['id']}"
+                    f"{MAIN_URL}/{value['link']}/videos/{value['id']}"
                     )
             if self.is_lessons(value['link']):
-                _webinars_urls.append(f"{self._main_url}/{value['link']}")
+                _webinars_urls.append(f"{MAIN_URL}/{value['link']}")
         for key, value in _videos.items():
-            _videos_urls.append(f"{self._main_url}/{value['link']}")
+            _videos_urls.append(f"{MAIN_URL}/{value['link']}")
         return _webinars_urls, _videos_urls, _interactives_urls
 
     def parse_lesson_or_chapter(self, url):
         filehtml = self.connect.get(url)
         soup = BeautifulSoup(filehtml.content, "html.parser")
-        links_list = list()
-        name_list = list()
+        links_list = []
+        name_list = []
         for i in soup.findAll("li", {"class": "lesson-contents__list-item"}):
             links_list.append(i.find("a")['href'])
             name_list.append(i.find("a").text)
@@ -283,8 +286,8 @@ class ParseGB():
     def parse_interactive(self, url):
         filehtml = self.connect.get(url)
         soup = BeautifulSoup(filehtml.content, "html.parser")
-        links_list = list()
-        name_list = list()
+        links_list = []
+        name_list = []
         for i in soup.findAll("div", {"class": "lesson-contents"}):
             links_list.append(i.find("a")['href'])
             name_list.append(i.find("a").text)
@@ -295,7 +298,7 @@ class ParseGB():
         videos_number = re.findall(r'\/\d+', url_2_parse_hw[0])
         url_2_parse_course = re.findall(r'study_groups/\d+/videos/', url)
         url_2_parse_course_number = re.findall(r'/\d+/', url_2_parse_course[0])
-        link_dz = f'{self._main_url}/study_groups' + \
+        link_dz = f'{MAIN_URL}/study_groups' + \
             f'{url_2_parse_course_number[0]}homeworks{videos_number[0]}'
         filehtml_hw = self.connect.get(link_dz)
         soup_hw = BeautifulSoup(filehtml_hw.content, "html.parser")
@@ -314,111 +317,94 @@ class DownloadGB():
     """docstring for DownloadGB.
 
     """
+    __was_downl_info = (
+        ' Файл уже был скачен ранее , если скачен не корректно или не скачен \
+            (1. пропустить):',
+        '1. удалите багованные файлы с компьютера',
+        '2. и в начале использования скрипта введите цифру 2\n'
+        )
+    __attention = 'Важные объявление.txt'
+    __home_work = 'Домашнее задание.txt'
+    __urls = 'Ссылки.txt'
+    __unexpexted_err = 'cкачать не могу, по неизвестным причинам'
+    __acsses_err = 'Доступ запрещен, до сайта:'
+    __google_sheet = 'Скачать не могу, так как это ссылка на google sheets \
+        страницу:'
+    __web_url = 'Скачать не могу, так как это ссылка на Web-страницу:'
+    __download_file = 'Скачали файл'
+    __arleady_exists = 'Уже существует'
+    __create_path = 'Создана папка'
+    __save_url_2_file = 'Сохранили сслыку в файл:'
+    __html = "html"
+    __app_bin = 'application/binary'
+    __docs_google = "docs.google.com"
+    __drive_google = "drive.google.com"
 
-    def __init__(
-        self, _separator, _main_url, _url_courses,
-        _main_path, _courses_path
-        ):
-        self._separator = _separator
-        self._main_url = _main_url
-        self._url_courses = _url_courses
-        self._main_path = _main_path
-        self._courses_path = _courses_path
-
-
-    def save_urls(self, file2download, pwd_path):
-        path = pwd_path + '/Ссылки.txt'
-        lines = list()
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as file:
-                lines = [i.strip() for i in file.readlines()]
-                read_file = file.readlines()
-                for i in read_file:
-                    line = i.strip()
-                    lines.append(line)
-        lines.append(file2download)
-        lines = set(lines)
-        with open(path, "w", encoding="utf-8") as file:
-            for i in lines:
-                file.write(i + '\n')
-        print(f'Сохранили сслыку в файл: {path}')
-
-    def replace_for_paths(cls, _course_name, _lesson_name):
-        # заменяем все "\" и "/" на "_", что бы при скачивании порграмма
-        # не считала, что это путь
-        _course_name = re.sub(r'\\', "_", _course_name)
-        _course_name = re.sub(r'/', "_", _course_name)
-        _lesson_name = re.sub(r'\\', "_", _lesson_name)
-        _lesson_name = re.sub(r'/', "_", _lesson_name)
-        return _course_name, _lesson_name
 
     def download(self, courses, step):
+        self.create_or_download(f'{MAIN_PATH}/')
         for lesson in courses:
             print()
-            _course_name = lesson['course_name']
-            _lesson_name = lesson['lesson_name']
             _course_name, _lesson_name = self.replace_for_paths(
-                _course_name, _lesson_name
+                lesson['course_name'], lesson['lesson_name']
                 )
+
+            if step == 0 and lesson['is_downloaded']:
+                way_path = f'{MAIN_PATH}/{_course_name}/{_lesson_name}/'
+                __was_downl_info.insert(
+                    0,
+                    f'{_lesson_name}({lesson["content_url"]})'
+                    )
+                __was_downl_info.append(_SEPARATOR)
+                [print(i) for i in __was_downl_info]
+                continue
+
+            # создаем папки
+            self.create_or_download(f'{MAIN_PATH}/{_course_name}/')
+            self.create_or_download(
+                f'{MAIN_PATH}/{_course_name}/{_lesson_name}/'
+                )
+
+            # скачаиваем инфу
+            if lesson['comment'] != None:
+                self.create_or_download(
+                    f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{__attention}',
+                    text=lesson['comment']
+                    )
+            if lesson['dz'] != None:
+                self.create_or_download(
+                    f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{__home_work}',
+                    text=lesson['dz']
+                    )
+
+            _links_list = []
+            for n in _links_lists:
+                _links_list.append(n)
+            _links_name_list = []
             _name_list = lesson['links']['name_list']
             _links_lists = lesson['links']['links_list']
-            if step == 0 and lesson['is_downloaded']:
-                way_path = f'{self._main_path}/{_course_name}/{_lesson_name}/'
-                downloaded_message = (
-                    f'Курс {lesson["content_url"]} уже был скачен ранее , ' + \
-                    'если скачен не корректно или не скачен (1 шаг пропустить):',
-                    f'1. удалите файлы с компьютера по пути: {way_path}',
-                    '2. и в начале использования скрипта введите цифру 2'
-                    )
-                print('*' * 50)
-                for info in downloaded_message:
-                    print(info)
-                continue
-        # создаем папки
-        self.create_or_download(f'{self._main_path}/{_course_name}/')
-        self.create_or_download(
-            f'{self._main_path}/{_course_name}/{_lesson_name}/'
-            )
-        # скачаиваем инфу
-        if lesson['comment'] != None:
-            download.create_or_download(
-                f'{self._main_path}/{_course_name}/{_lesson_name}/' + \
-                    'Важные объявление.txt',
-                text=lesson['comment']
+            for n in _name_list:
+                _links_name_list.append(n)
+            _names = self.name_file(
+                links_name_list=_links_name_list,
+                links_list=_links_list
                 )
-        if lesson['dz'] != None:
-            download.create_or_download(
-                f'{self._main_path}/{_course_name}/{_lesson_name}/' + \
-                    'Домашнее задание.txt',
-                text=lesson['dz']
-                )
-        _links_list = list()
-        for n in _links_lists:
-            _links_list.append(n)
-        _links_name_list = list()
-        for n in name_list:
-            _links_name_list.append(n)
-        _names = download.name_file(
-            links_name_list=_links_name_list,
-            links_list=_links_list
-            )
-        n = 0
-        while n+1 <= len(_links_list):
-            download.create_or_download(
-                f'{self._main_path}/{_course_name}/{_lesson_name}/{_names[n]}'
+
+            n = 0
+            while n+1 <= len(_links_list):
+                self.create_or_download(
+                f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{_names[n]}'
                 ),
-            _file2download = _links_list[n],
-            _pwd_path = f'{self._main_path}/{_course_name}/{_lesson_name}'
-            n += 1
-        lesson['is_downloaded'] = True
-        _list_save = {
+                _file2download = _links_list[n],
+                _pwd_path = f'{MAIN_PATH}/{_course_name}/{_lesson_name}'
+                n += 1
+            lesson['is_downloaded'] = True
+        _courses = {
             'lessons': lessons_list,
             'chapters': chapters_list,
             'interactives': interactives_list
             }
-        with open(self._courses_path, "w", encoding="utf-8") as file:
-            file.write(json.dumps(_list_save, ensure_ascii=False))
-        return True
+        write_2_json_file(JSON_COURSES_PATH, courses=_courses)
 
     def download_all(self, path, _file2download, _pwd_path):
         try:
@@ -426,7 +412,7 @@ class DownloadGB():
         except Exception as e:
             request_url = None
         if request_url == None:
-            print(f"{_file2download} cкачать не могу, по непонятным причинам")
+            print(f"{_file2download} {__unexpexted_err}")
             self.save_urls(_file2download, _pwd_path)
             return False
         try:
@@ -434,73 +420,89 @@ class DownloadGB():
         except Exception as e:
             connection = None
         if connection == 'close':
-            print(f'Доступ к ресурсу {_file2download} запрещен')
+            print(f'{__acsses_err} {_file2download}')
             self.save_urls(_file2download, _pwd_path)
             return False
         try:
             content_type = request_url.headers['content-type']
         except Exception as e:
             content_type = None
-        if content_type == None or "html" in content_type or \
-                'application/binary' in content_type:
-            if content_type != None and "drive.google.com" in _file2download \
-                    or "docs.google.com" in _file2download:
-                print("Скачать не могу, так как это ссылка на google sheets " + \
-                    f"страницу: {_file2download}"
-                    )
+        if content_type == None or __html in content_type or \
+                __app_bin in content_type:
+            if content_type != None and __drive_google in _file2download \
+                    or __docs_google in _file2download:
+                print(f"{__google_sheet} {_file2download}")
                 self.save_urls(_file2download, _pwd_path)
             else:
-                print("Скачать не могу, так как это ссылка на веб " + \
-                    f"страницу: {_file2download}"
-                    )
+                print(f"{__web_url} {_file2download}")
                 self.save_urls(_file2download, _pwd_path)
         else:
             urllib.request.urlretrieve(_file2download, path)
-            print(f"Скачали файл {path}")
+            print(f"{__download_file} {path}")
 
     def create_or_download(self, path, _pwd_path=None, _file2download=None, text=None):
         if os.path.exists(path):
-            print(f'Уже существует {path}')
-        elif os.path.exists(f'{_pwd_path}/Ссылки.txt'):
-            print(f'Уже существует {_pwd_path}/Ссылки.txt')
+            print(f'{__arleady_exists} {path}')
+        elif os.path.exists(f'{_pwd_path}/{__urls}'):
+            print(f'{__arleady_exists} {_pwd_path}/{__urls}')
         else:
             if _file2download==None and text==None:
-                os.mkdir(path)
-                print(f"Создана папка {path}")
-
+                os.mkdir(path):
+                print(f"{__create_path} {path}")
             elif text != None:
-                with open(path, "w", encoding="utf-8") as f:
-                    f.write(text)
-                print(f"Создан файл {path}")
-
+                save_text_in_file(path, text)
+                print(f"__create_path {path}")
             elif _file2download != None:
                 self.download_all(path, _file2download, _pwd_path)
 
+    def save_urls(self, file2download, pwd_path):
+        path = f'{pwd_path}/{__urls}'
+        lines = []
+        if os.path.exists(path):
+            lines = read_lines_from_file(path)
+        lines.append(file2download)
+        lines = set(lines)
+        write_lines_in_file(path, lines)
+        print(f'{__save_url_2_file} {path}')
+        return True
+
+    def replace_for_paths(_course_name, _lesson_name):
+        # заменяем все "\" и "/" на "_", что бы при скачивании порграмма
+        # не считала, что это путь
+        _course_name = _course_name.replace(_course_name, '\\', "_")
+        _course_name = _course_name.replace(_course_name, "/", "_")
+        _lesson_name = _lesson_name.replace(_lesson_name, '\\', "_")
+        _lesson_name = _lesson_name.replace(_lesson_name, "/", "_")
+        return _course_name, _lesson_name
+
     def name_file(self, links_name_list, links_list):
-            n = 0
-            names = list()
-            while n+1 <= len(links_list):
-                if ".google.com" in links_list[n]:
+        n = 0
+        names = []
+        while n+1 <= len(links_list):
+            if __docs_google in links_list[n] or \
+                __drive_google in links_list[n]:
+                names.append(links_name_list[n])
+            else:
+                expansion_link = re.findall(r"\.\w+$", links_list[n])
+                expansion_name = re.findall(r"\.\w+$", links_name_list[n])
+                if expansion_link == expansion_name:
                     names.append(links_name_list[n])
                 else:
-                    expansion_link = re.findall(r"\.\w+$", links_list[n])
-                    expansion_name = re.findall(r"\.\w+$", links_name_list[n])
-                    if expansion_link == expansion_name:
-                        names.append(links_name_list[n])
-                    else:
-                        names.append(f'{links_name_list[n]}{expansion_link[0]}')
-                n +=1
-
-            return names
+                    names.append(f'{links_name_list[n]}{expansion_link[0]}')
+            n +=1
+        return names
 
 def main():
     parse = GoParseGB()
     return parse.start()
 
 if __name__ == '__main__':
+    __thanks = 'Спасибо, за то, что воспользовались скриптом!'
+    __offers = ('\nЖаль, что Вам не удлось воспользоваться скриптом.',
+        "По вопросами и предложениям можно писать в Телеграм: @nishadrin \
+        (https://t.me/nishadrin)")
+
     if main():
-        print('Спасибо, за то, что воспользовались скриптом!')
+        print(__thanks)
     else:
-        print('\nЖаль, что Вам не удлось воспользоваться скриптом.',
-            "По вопросами и предложениям можно писать в Телеграм: @nishadrin" +\
-            "(https://t.me/nishadrin)", sep='\n')
+        [print(i, sep='\n') for i in __offers]
