@@ -61,12 +61,13 @@ class GoParseGB():
     def __init__(self):
         self._continue_download = "0 - Продолжить скачивать"
 
+
     def start(self):
         if os.path.exists(JSON_COURSES_PATH):
             MAIN_MENU.insert(0, self._continue_download,)
         print(_SEPARATOR)
         [print(choice) for choice in MAIN_MENU]
-        _step = int(input({__step_choise}))
+        _step = int(input(self.__step_choise))
         if _step != 2 and _step != 0:
             _authorization = self.check_authorization()
             _courses_json = self.parsing(_authorization)
@@ -74,11 +75,11 @@ class GoParseGB():
             return True
         if _step == 2 or _step == 0:
             if not os.path.exists(JSON_COURSES_PATH):
-                print(f'{__not_see_file} {JSON_COURSES_PATH}')
+                print(f'{self.__not_see_file} {JSON_COURSES_PATH}')
                 return False
             with open(JSON_COURSES_PATH, "r", encoding="utf-8") as file:
                 _courses_json = json.load(file)
-        print(_SEPARATOR, __downl_material, sep='\n')
+        print(_SEPARATOR, self.__downl_material, sep='\n')
         _courses_list = [
             _courses_json['lessons'] + _courses_json['chapters'] + \
             _courses_json['interactives']
@@ -186,14 +187,14 @@ class ParseGB():
     def parse(self):
         _courses = self.parse_lessons()
         write_2_json_file(path=JSON_COURSES_PATH, courses=_courses)
-        print(f'{__save_in_file} {JSON_COURSES_PATH}')
+        print(f'{self.__save_in_file} {JSON_COURSES_PATH}')
         return True
 
     def parse_lessons(self):
         _lessons, _chapters, _interactives = self.check_parse_courses()
         if not _lessons:
             return False
-        print(_SEPARATOR, __parse_one_lesson, sep='\n')
+        print(_SEPARATOR, self.__parse_one_lesson, sep='\n')
         _lessons_list = self.parse_many_courses(_lessons)
         _chapters_list = self.parse_many_courses(_chapters)
         _interactives_list = self.parse_many_courses(_interactives)
@@ -204,29 +205,29 @@ class ParseGB():
         return _courses_dict
 
     def check_parse_courses(self):
-        print(_SEPARATOR, __parse_educ_url, sep='\n')
+        print(_SEPARATOR, self.__parse_educ_url, sep='\n')
         try:
             _lessons, _chapters, _interactives = self.parse_courses()
         except Exception as EducationParseError:
-            print(_SEPARATOR, __parse_educ_url_err, sep='\n')
+            print(_SEPARATOR, self.__parse_educ_url_err, sep='\n')
             return False, False, False
         return _lessons, _chapters, _interactives
 
     def parse_many_courses(self, courses):
         _courses_list = []
         for i in courses:
-            print(f'{__parse_url} {i}')
+            print(f'{self.__parse_url} {i}')
             if 'lessons' in i or 'chapters' in i:
                 try:
                     _one_course = self.parse_lesson_or_chapter(i)
                 except Exception as LessonChapterError:
-                    print(__parse_vid_web_err)
+                    print(self.__parse_vid_web_err)
                     return False
             if 'study_groups' in i:
                 try:
                     _one_course = self.parse_interactive(i)
                 except Exception as InteractiveError:
-                    print(__parse_inter_err)
+                    print(self.__parse_inter_err)
                     return False
             _courses_list.append(_one_course)
         return _courses_list
@@ -272,7 +273,8 @@ class ParseGB():
             comment = None
         dz = None
         if is_lessons(url):
-            filehtml_homework = self.connect.get(f'{url}/{__hw_material_add}')
+            filehtml_homework = self.connect.get(f'{url}/ \
+                {self.__hw_material_add}')
             homework = BeautifulSoup(filehtml_homework.content, "html.parser")
             dz = homework.find("div", {"class": "task-block-teacher"})
             if dz:
@@ -343,13 +345,14 @@ class DownloadGB():
     __drive_google = "drive.google.com"
 
     def is_web_url(self, content_type):
-        if content_type == None or __html in content_type or \
-                __app_bin in content_type:
+        if content_type == None or self.__html in content_type or \
+                self.__app_bin in content_type:
             return True
         return False
 
     def is_google_drive(self, _file2download):
-        if __drive_google in _file2download or __docs_google in _file2download:
+        if self.__drive_google in _file2download or \
+                self.__docs_google in _file2download:
             return True
         return False
 
@@ -363,12 +366,12 @@ class DownloadGB():
 
             if step == 0 and lesson['is_downloaded']:
                 way_path = f'{MAIN_PATH}/{_course_name}/{_lesson_name}/'
-                __was_downl_info.insert(
+                self.__was_downl_info.insert(
                     0,
                     f'{_lesson_name}({lesson["content_url"]})'
                     )
-                __was_downl_info.append(_SEPARATOR)
-                [print(i) for i in __was_downl_info]
+                self.__was_downl_info.append(_SEPARATOR)
+                [print(i) for i in self.__was_downl_info]
                 continue
 
             # создаем папки
@@ -380,12 +383,12 @@ class DownloadGB():
             # скачаиваем инфу
             if lesson['comment'] != None:
                 self.create_or_download(
-                    f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{__attention}',
+                    f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{self.__attention}',
                     text=lesson['comment']
                     )
             if lesson['dz'] != None:
                 self.create_or_download(
-                    f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{__home_work}',
+                    f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{self.__home_work}',
                     text=lesson['dz']
                     )
 
@@ -420,11 +423,7 @@ class DownloadGB():
         write_2_json_file(JSON_COURSES_PATH, courses=_courses)
         return True
 
-<<<<<<< HEAD
     def check_download_all(self, _file2download):
-=======
-    def check_download_all(self, path, _file2download, _pwd_path):
->>>>>>> refs/remotes/origin/better
         try:
             request_url = requests.head(_file2download)
         except Exception as e:
@@ -444,45 +443,45 @@ class DownloadGB():
             _file2download
             )
         if request_url == None:
-            print(f"{_file2download} {__unexpexted_err}")
+            print(f"{_file2download} {self.__unexpexted_err}")
         if connection == 'close':
-            print(f'{__acsses_err} {_file2download}')
+            print(f'{self.__acsses_err} {_file2download}')
         if self.is_web_url(content_type):
             if content_type != None and self.is_google_drive(_file2download):
-                print(f"{__google_sheet} {_file2download}")
+                print(f"{self.__google_sheet} {_file2download}")
             else:
-                print(f"{__web_url} {_file2download}")
+                print(f"{self.__web_url} {_file2download}")
         else:
             urllib.request.urlretrieve(_file2download, path)
-            print(f"{__download_file} {path}")
+            print(f"{self.__download_file} {path}")
             return True
 
-        self.resave_urls(_file2download, _pwd_path)
+        return self.resave_urls(_file2download, _pwd_path)
 
     def create_or_download(self, path, _pwd_path=None, _file2download=None, text=None):
         if os.path.exists(path):
-            print(f'{__arleady_exists} {path}')
-        elif os.path.exists(f'{_pwd_path}/{__urls}'):
-            print(f'{__arleady_exists} {_pwd_path}/{__urls}')
+            print(f'{self.__arleady_exists} {path}')
+        elif os.path.exists(f'{_pwd_path}/{self.__urls}'):
+            print(f'{self.__arleady_exists} {_pwd_path}/{self.__urls}')
         else:
             if _file2download==None and text==None:
-                os.mkdir(path):
-                print(f"{__create_path} {path}")
+                os.mkdir(path)
+                print(f"{self.__create_path} {path}")
             elif text != None:
                 save_text_in_file(path, text)
-                print(f"__create_path {path}")
+                print(f"{self.__create_path} {path}")
             elif _file2download != None:
                 self.download_all(path, _file2download, _pwd_path)
 
     def resave_urls(self, file2download, pwd_path):
-        path = f'{pwd_path}/{__urls}'
+        path = f'{pwd_path}/{self.__urls}'
         lines = []
         if os.path.exists(path):
             lines = read_lines_from_file(path)
         lines.append(file2download)
         lines = set(lines)
         write_lines_in_file(path, lines)
-        print(f'{__save_url_2_file} {path}')
+        print(f'{self.__save_url_2_file} {path}')
         return True
 
     def replaces_for_paths(_course_name, _lesson_name):
