@@ -420,7 +420,11 @@ class DownloadGB():
         write_2_json_file(JSON_COURSES_PATH, courses=_courses)
         return True
 
+<<<<<<< HEAD
     def check_download_all(self, _file2download):
+=======
+    def check_download_all(self, path, _file2download, _pwd_path):
+>>>>>>> refs/remotes/origin/better
         try:
             request_url = requests.head(_file2download)
         except Exception as e:
