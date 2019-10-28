@@ -53,6 +53,11 @@ def save_text_in_file(path, text):
     return True
 
 class GoParseGB():
+
+    __step_choise = 'Что будем делать?(Введите цифру): '
+    __not_see_file = 'Не вижу файл:'
+    __downl_material = 'Скачваем материал...'
+
     def __init__(self):
         self._continue_download = "0 - Продолжить скачивать"
 
@@ -60,29 +65,24 @@ class GoParseGB():
         if os.path.exists(JSON_COURSES_PATH):
             MAIN_MENU.insert(0, self._continue_download,)
         print(_SEPARATOR)
-
-        for choice in MAIN_MENU:
-            print(choice)
-        _step = int(input('Что будем делать?(Введите цифру) '))
-        print(_SEPARATOR)
+        [print(choice) for choice in MAIN_MENU]
+        _step = int(input({__step_choise}))
         if _step != 2 and _step != 0:
             _authorization = self.check_authorization()
             _courses_json = self.parsing(_authorization)
-            _authorization.close_session()
         if _step == 1:
             return True
         if _step == 2 or _step == 0:
             if not os.path.exists(JSON_COURSES_PATH):
-                print(f'\nНе вижу файл: {JSON_COURSES_PATH}')
+                print(f'{__not_see_file} {JSON_COURSES_PATH}')
                 return False
             with open(JSON_COURSES_PATH, "r", encoding="utf-8") as file:
                 _courses_json = json.load(file)
-        print(_SEPARATOR)
-        print('Скачваем материал...')
-        _lessons_list = _courses_json['lessons']
-        _chapters_list = _courses_json['chapters']
-        _interactives_list = _courses_json['interactives']
-        _courses_list = (_lessons_list+_chapters_list+_interactives_list)
+        print(_SEPARATOR, __downl_material, sep='\n')
+        _courses_list = [
+            _courses_json['lessons'] + _courses_json['chapters'] + \
+            _courses_json['interactives']
+            ]
         if _step == 0:
             self.downloading(_courses_list, step=_step)
         else:
@@ -113,11 +113,12 @@ class GoParseGB():
 
     def parsing(_authorization):
         _authorization.parse()
+        _authorization.close_session()
         return True
 
     def downloading(self, _courses_list, step=1):
         _download = DownloadGB()
-        _download.download(courses=_courses_list, step=step)
+        _download.main_download(courses=_courses_list, step=step)
         return True
 
 
@@ -125,6 +126,8 @@ class ParseGB():
     """docstring for parse_GB
 
     """
+
+
     __save_in_file = 'Сохранили в файл:'
     __parse_one_lesson = 'Парсим каждый урок по отдельности:'
     __parse_educ_url = 'Парсим страницу educations...'
@@ -132,6 +135,7 @@ class ParseGB():
     __parse_url = 'Парсим ссылку'
     __parse_vid_web_err = 'Не удалось пропарсить видео/вебинары'
     __parse_inter_err = 'Не удалось пропарсить страницу интерактивы'
+    __hw_material_add = 'homework'
 
     def __init__(
         self, _email, _password):
@@ -161,6 +165,7 @@ class ParseGB():
 
     def close_session(self):
         self.connect.close()
+
 
     def is_study_groups(self, url):
         if "study_groups" in url:
@@ -265,16 +270,13 @@ class ParseGB():
             comment = comment.text
         else:
             comment = None
-        if "/lessons" in url:
-            filehtml_homework = self.connect.get(url + "/homework")
+        dz = None
+        if is_lessons(url):
+            filehtml_homework = self.connect.get(f'{url}/{__hw_material_add}')
             homework = BeautifulSoup(filehtml_homework.content, "html.parser")
-            dz = homework.find("div", { "class" : "task-block-teacher" })
+            dz = homework.find("div", {"class": "task-block-teacher"})
             if dz:
                 dz = dz.text
-            else:
-                dz = None
-        else:
-            dz = None
         is_downloaded = False
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
@@ -294,10 +296,10 @@ class ParseGB():
         links = {"name_list": name_list, "links_list": links_list}
         course_name = soup.find("span", {"class": "course-title"}).text
         lesson_name = soup.find("h3", {"class": "title"}).text
-        url_2_parse_hw = re.findall(r'\/videos\/\d+', url)
-        videos_number = re.findall(r'\/\d+', url_2_parse_hw[0])
-        url_2_parse_course = re.findall(r'study_groups/\d+/videos/', url)
-        url_2_parse_course_number = re.findall(r'/\d+/', url_2_parse_course[0])
+        url_2_parse_hw = re.findall(r'\/videos\/\d+', url) # TODO re.findall c [0]
+        videos_number = re.findall(r'\/\d+', url_2_parse_hw[0]) # TODO re.findall c [0]
+        url_2_parse_course = re.findall(r'study_groups/\d+/videos/', url) # TODO re.findall c [0]
+        url_2_parse_course_number = re.findall(r'/\d+/', url_2_parse_course[0]) # TODO re.findall c [0]
         link_dz = f'{MAIN_URL}/study_groups' + \
             f'{url_2_parse_course_number[0]}homeworks{videos_number[0]}'
         filehtml_hw = self.connect.get(link_dz)
@@ -340,12 +342,22 @@ class DownloadGB():
     __docs_google = "docs.google.com"
     __drive_google = "drive.google.com"
 
+    def is_web_url(self, content_type):
+        if content_type == None or __html in content_type or \
+                __app_bin in content_type:
+            return True
+        return False
 
-    def download(self, courses, step):
+    def is_google_drive(self, _file2download):
+        if __drive_google in _file2download or __docs_google in _file2download:
+            return True
+        return False
+
+    def main_download(self, courses, step):
         self.create_or_download(f'{MAIN_PATH}/')
         for lesson in courses:
             print()
-            _course_name, _lesson_name = self.replace_for_paths(
+            _course_name, _lesson_name = self.replaces_for_paths(
                 lesson['course_name'], lesson['lesson_name']
                 )
 
@@ -406,31 +418,33 @@ class DownloadGB():
             }
         write_2_json_file(JSON_COURSES_PATH, courses=_courses)
 
-    def download_all(self, path, _file2download, _pwd_path):
+    def check_download_all(self, path, _file2download, _pwd_path):
         try:
             request_url = requests.head(_file2download)
         except Exception as e:
             request_url = None
-        if request_url == None:
-            print(f"{_file2download} {__unexpexted_err}")
-            self.save_urls(_file2download, _pwd_path)
-            return False
         try:
             connection = request_url.headers['Connection']
         except Exception as e:
             connection = None
-        if connection == 'close':
-            print(f'{__acsses_err} {_file2download}')
-            self.save_urls(_file2download, _pwd_path)
-            return False
         try:
             content_type = request_url.headers['content-type']
         except Exception as e:
             content_type = None
-        if content_type == None or __html in content_type or \
-                __app_bin in content_type:
-            if content_type != None and __drive_google in _file2download \
-                    or __docs_google in _file2download:
+        return request_url, connection, content_type
+
+    def download_all(self, path, _file2download, _pwd_path):
+        request_url, connection, content_type = self.check_download_all(
+            path, _file2download, _pwd_path
+            )
+        if request_url == None:
+            print(f"{_file2download} {__unexpexted_err}")
+            self.save_urls(_file2download, _pwd_path)
+        if connection == 'close':
+            print(f'{__acsses_err} {_file2download}')
+            self.save_urls(_file2download, _pwd_path)
+        if self.is_web_url(content_type):
+            if content_type != None and self.is_google_drive(_file2download):
                 print(f"{__google_sheet} {_file2download}")
                 self.save_urls(_file2download, _pwd_path)
             else:
@@ -466,7 +480,7 @@ class DownloadGB():
         print(f'{__save_url_2_file} {path}')
         return True
 
-    def replace_for_paths(_course_name, _lesson_name):
+    def replaces_for_paths(_course_name, _lesson_name):
         # заменяем все "\" и "/" на "_", что бы при скачивании порграмма
         # не считала, что это путь
         _course_name = _course_name.replace(_course_name, '\\', "_")
