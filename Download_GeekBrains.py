@@ -523,4 +523,4 @@ if __name__ == '__main__':
     if main():
         print(__thanks)
     else:
-        [print(i, sep='\n') for i in __offers]
+        [print(i) for i in __offers]
