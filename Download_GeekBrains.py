@@ -7,6 +7,7 @@ import urllib.request
 
 import requests
 from bs4 import BeautifulSoup
+import pprint
 
 _SEPARATOR = '*' * 50
 JSON_COURSES_PATH = os.path.abspath('courses.json')
@@ -15,16 +16,15 @@ MAIN_URL = "https://geekbrains.ru"
 COURSES_URL = "https://geekbrains.ru/education"
 MAIN_MENU = [
     '1 - Пропарсить и сохранить в json',
-    '2 - Скачать из json (файл должен находится по пути:' + \
-        f'{COURSES_URL})',
+    f'2 - Скачать из json (файл должен находится по пути: {COURSES_URL})',
     '3 - Пропарсить и скачать (удаляется json файл)',
     '>4 - Пропарсить и скачать (сохранить json файл)\n',
-    'PS: Для скачивания материала может потребоваться много времени' + \
-    ' и места на жестком диске',
+    'PS: Для скачивания материала может потребоваться много времени \
+и места на жестком диске',
     ]
 ERROR_MESSAGES = [
-    f"Не удается скачать ссылки на уроки с основной страницы \
-    {COURSES_URL}, возможные проблемы:",
+    f"Не удается скачать ссылки на уроки с основной страницы {COURSES_URL}, \
+возможные проблемы:",
     "1. Нет подключения к интернету",
     "2. Не верный логин и/или пароль от GB",
     "3. GB что то переделали на сайте, и надо редактировать скрипт",
@@ -37,10 +37,9 @@ def write_2_json_file(path, courses):
     return True
 
 def read_lines_from_file(path):
-    lines = []
     with open(path, "r", encoding="utf-8") as file:
-        [lines.append(i.strip()) for i in file.readlines()]
-    return lines
+        return [i.strip() for i in file.readlines()]
+
 
 def write_lines_in_file(path, lines):
     with open(path, "w", encoding="utf-8") as file:
@@ -68,6 +67,8 @@ class GoParseGB():
         print(_SEPARATOR)
         [print(choice) for choice in MAIN_MENU]
         _step = int(input(self.__step_choise))
+        if _step not in [0, 1, 2, 3, 4]:
+            pass
         if _step != 2 and _step != 0:
             _authorization = self.check_authorization()
             _courses_json = self.parsing(_authorization)
@@ -80,10 +81,11 @@ class GoParseGB():
             with open(JSON_COURSES_PATH, "r", encoding="utf-8") as file:
                 _courses_json = json.load(file)
         print(_SEPARATOR, self.__downl_material, sep='\n')
-        _courses_list = [
-            _courses_json['lessons'] + _courses_json['chapters'] + \
-            _courses_json['interactives']
-            ]
+        _courses_list = {
+            'lessons': _courses_json['lessons'],
+            'chapters': _courses_json['chapters'],
+            'interactives': _courses_json['interactives']
+            }
         if _step == 0:
             self.downloading(_courses_list, step=_step)
         else:
@@ -99,11 +101,10 @@ class GoParseGB():
         except Exception as AuthorizationError:
             _authorization = False
         if not _authorization:
-            for error in ERROR_MESSAGES:
-                print(error)
+            [print(error) for error in ERROR_MESSAGES]
         return _authorization
 
-    def login():
+    def login(self):
         _email = input('Введите email от GB: ')
         _password = input('Введите пароль от GB: ')
         return _email, _password
@@ -112,7 +113,7 @@ class GoParseGB():
         _authorization = ParseGB(_email, _password)
         return _authorization
 
-    def parsing(_authorization):
+    def parsing(self, _authorization):
         _authorization.parse()
         _authorization.close_session()
         return True
@@ -187,7 +188,8 @@ class ParseGB():
     def parse(self):
         _courses = self.parse_lessons()
         write_2_json_file(path=JSON_COURSES_PATH, courses=_courses)
-        print(f'{self.__save_in_file} {JSON_COURSES_PATH}')
+        print(_SEPARATOR)
+        print(f"{self.__save_in_file} {JSON_COURSES_PATH}")
         return True
 
     def parse_lessons(self):
@@ -195,6 +197,7 @@ class ParseGB():
         if not _lessons:
             return False
         print(_SEPARATOR, self.__parse_one_lesson, sep='\n')
+        print(_SEPARATOR)
         _lessons_list = self.parse_many_courses(_lessons)
         _chapters_list = self.parse_many_courses(_chapters)
         _interactives_list = self.parse_many_courses(_interactives)
@@ -271,19 +274,19 @@ class ParseGB():
             comment = comment.text
         else:
             comment = None
-        dz = None
-        if is_lessons(url):
+        hw = None
+        if self.is_lessons(url):
             filehtml_homework = self.connect.get(f'{url}/ \
                 {self.__hw_material_add}')
             homework = BeautifulSoup(filehtml_homework.content, "html.parser")
-            dz = homework.find("div", {"class": "task-block-teacher"})
-            if dz:
-                dz = dz.text
+            hw = homework.find("div", {"class": "task-block-teacher"})
+            if hw:
+                hw = hw.text
         is_downloaded = False
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
             "content_url": url, "comment": comment, "links": links,
-            "dz": dz, "is_downloaded": is_downloaded
+            "hw": hw, "is_downloaded": is_downloaded
             }
         return dic
 
@@ -302,16 +305,16 @@ class ParseGB():
         videos_number = re.findall(r'\/\d+', url_2_parse_hw[0]) # TODO re.findall c [0]
         url_2_parse_course = re.findall(r'study_groups/\d+/videos/', url) # TODO re.findall c [0]
         url_2_parse_course_number = re.findall(r'/\d+/', url_2_parse_course[0]) # TODO re.findall c [0]
-        link_dz = f'{MAIN_URL}/study_groups' + \
+        link_hw = f'{MAIN_URL}/study_groups' + \
             f'{url_2_parse_course_number[0]}homeworks{videos_number[0]}'
-        filehtml_hw = self.connect.get(link_dz)
+        filehtml_hw = self.connect.get(link_hw)
         soup_hw = BeautifulSoup(filehtml_hw.content, "html.parser")
-        dz = soup_hw.find("div", {"class": "homework-description"}).text
+        hw = soup_hw.find("div", {"class": "homework-description"}).text
         comment = None
         is_downloaded = False
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
-            "content_url": url, "links": links, "comment": comment, "dz": dz,
+            "content_url": url, "links": links, "comment": comment, "hw": hw,
             "is_downloaded": is_downloaded
             }
         return dic
@@ -321,12 +324,12 @@ class DownloadGB():
     """docstring for DownloadGB.
 
     """
-    __was_downl_info = (
+    __was_downl_info = [
         ' Файл уже был скачен ранее , если скачен не корректно или не скачен \
-            (1. пропустить):',
+(1. пропустить):',
         '1. удалите багованные файлы с компьютера',
         '2. и в начале использования скрипта введите цифру 2\n'
-        )
+        ]
     __attention = 'Важные объявление.txt'
     __home_work = 'Домашнее задание.txt'
     __urls = 'Ссылки.txt'
@@ -345,8 +348,7 @@ class DownloadGB():
     __drive_google = "drive.google.com"
 
     def is_web_url(self, content_type):
-        if content_type == None or self.__html in content_type or \
-                self.__app_bin in content_type:
+        if self.__html in content_type or self.__app_bin in content_type:
             return True
         return False
 
@@ -358,19 +360,17 @@ class DownloadGB():
 
     def main_download(self, courses, step):
         self.create_or_download(f'{MAIN_PATH}/')
+        lessons = courses['lessons']
+        chapters = courses['chapters']
+        interactives = courses['interactives']
+        courses = lessons + chapters + interactives
         for lesson in courses:
-            print()
             _course_name, _lesson_name = self.replaces_for_paths(
                 lesson['course_name'], lesson['lesson_name']
                 )
-
             if step == 0 and lesson['is_downloaded']:
-                way_path = f'{MAIN_PATH}/{_course_name}/{_lesson_name}/'
-                self.__was_downl_info.insert(
-                    0,
-                    f'{_lesson_name}({lesson["content_url"]})'
-                    )
-                self.__was_downl_info.append(_SEPARATOR)
+                print()
+                print(f'{_lesson_name} ({lesson["content_url"]})')
                 [print(i) for i in self.__was_downl_info]
                 continue
 
@@ -381,23 +381,23 @@ class DownloadGB():
                 )
 
             # скачаиваем инфу
-            if lesson['comment'] != None:
+            if lesson['comment'] is not None:
                 self.create_or_download(
                     f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{self.__attention}',
                     text=lesson['comment']
                     )
-            if lesson['dz'] != None:
+            if lesson['hw'] is not None:
                 self.create_or_download(
                     f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{self.__home_work}',
-                    text=lesson['dz']
+                    text=lesson['hw']
                     )
 
             _links_list = []
-            for n in _links_lists:
-                _links_list.append(n)
             _links_name_list = []
             _name_list = lesson['links']['name_list']
             _links_lists = lesson['links']['links_list']
+            for n in _links_lists:
+                _links_list.append(n)
             for n in _name_list:
                 _links_name_list.append(n)
             _names = self.name_file(
@@ -408,16 +408,16 @@ class DownloadGB():
             n = 0
             while n+1 <= len(_links_list):
                 self.create_or_download(
-                f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{_names[n]}'
-                ),
+                f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{_names[n]}',
                 _file2download = _links_list[n],
                 _pwd_path = f'{MAIN_PATH}/{_course_name}/{_lesson_name}'
+                ),
                 n += 1
             lesson['is_downloaded'] = True
         _courses = {
-            'lessons': lessons_list,
-            'chapters': chapters_list,
-            'interactives': interactives_list
+            'lessons': lessons,
+            'chapters': chapters,
+            'interactives': interactives
             }
 
         write_2_json_file(JSON_COURSES_PATH, courses=_courses)
@@ -442,12 +442,12 @@ class DownloadGB():
         request_url, connection, content_type = self.check_download_all(
             _file2download
             )
-        if request_url == None:
+        if request_url is not None:
             print(f"{_file2download} {self.__unexpexted_err}")
         if connection == 'close':
             print(f'{self.__acsses_err} {_file2download}')
-        if self.is_web_url(content_type):
-            if content_type != None and self.is_google_drive(_file2download):
+        if content_type is None and self.is_web_url(content_type):
+            if content_type is not None and self.is_google_drive(_file2download):
                 print(f"{self.__google_sheet} {_file2download}")
             else:
                 print(f"{self.__web_url} {_file2download}")
@@ -459,18 +459,18 @@ class DownloadGB():
         return self.resave_urls(_file2download, _pwd_path)
 
     def create_or_download(self, path, _pwd_path=None, _file2download=None, text=None):
+        if os.path.exists(f'{_pwd_path}/{self.__urls}'):
+            print(f'{self.__arleady_exists} {_pwd_path}/{self.__urls}')
         if os.path.exists(path):
             print(f'{self.__arleady_exists} {path}')
-        elif os.path.exists(f'{_pwd_path}/{self.__urls}'):
-            print(f'{self.__arleady_exists} {_pwd_path}/{self.__urls}')
         else:
-            if _file2download==None and text==None:
+            if _file2download is None and text is None:
                 os.mkdir(path)
                 print(f"{self.__create_path} {path}")
-            elif text != None:
+            elif text is not None:
                 save_text_in_file(path, text)
                 print(f"{self.__create_path} {path}")
-            elif _file2download != None:
+            elif _file2download is not None:
                 self.download_all(path, _file2download, _pwd_path)
 
     def resave_urls(self, file2download, pwd_path):
@@ -484,21 +484,21 @@ class DownloadGB():
         print(f'{self.__save_url_2_file} {path}')
         return True
 
-    def replaces_for_paths(_course_name, _lesson_name):
+    def replaces_for_paths(self, _course_name, _lesson_name):
         # заменяем все "\" и "/" на "_", что бы при скачивании порграмма
         # не считала, что это путь
-        _course_name = _course_name.replace(_course_name, '\\', "_")
-        _course_name = _course_name.replace(_course_name, "/", "_")
-        _lesson_name = _lesson_name.replace(_lesson_name, '\\', "_")
-        _lesson_name = _lesson_name.replace(_lesson_name, "/", "_")
+        _course_name = _course_name.replace('\\', "_")
+        _course_name = _course_name.replace("/", "_")
+        _lesson_name = _lesson_name.replace('\\', "_")
+        _lesson_name = _lesson_name.replace("/", "_")
         return _course_name, _lesson_name
 
     def name_file(self, links_name_list, links_list):
         n = 0
         names = []
         while n+1 <= len(links_list):
-            if __docs_google in links_list[n] or \
-                __drive_google in links_list[n]:
+            if self.__docs_google in links_list[n] or \
+                self.__drive_google in links_list[n]:
                 names.append(links_name_list[n])
             else:
                 expansion_link = re.findall(r"\.\w+$", links_list[n])
@@ -515,10 +515,10 @@ def main():
     return parse.start()
 
 if __name__ == '__main__':
-    __thanks = 'Спасибо, за то, что воспользовались скриптом!'
+    __thanks = '\nСпасибо, за то, что воспользовались скриптом!\n'
     __offers = ('\nЖаль, что Вам не удлось воспользоваться скриптом.',
         "По вопросами и предложениям можно писать в Телеграм: @nishadrin \
-        (https://t.me/nishadrin)")
+        (https://t.me/nishadrin)\n")
 
     if main():
         print(__thanks)
