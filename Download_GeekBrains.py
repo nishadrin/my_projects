@@ -405,6 +405,8 @@ class DownloadGB():
                 links_list=_links_list
                 )
 
+            # TODO Если одинаковое название в списке с ссылками для
+            # TODO скачивания, нужно сделать разные называния
             n = 0
             while n+1 <= len(_links_list):
                 self.create_or_download(
