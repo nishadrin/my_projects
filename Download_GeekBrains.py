@@ -7,9 +7,8 @@ import urllib.request
 
 import requests
 from bs4 import BeautifulSoup
-import pprint
 
-_SEPARATOR = '*' * 50
+SEPARATOR = '*' * 50
 JSON_COURSES_PATH = os.path.abspath('courses.json')
 MAIN_PATH = os.path.abspath('GeekBrains')
 MAIN_URL = "https://geekbrains.ru"
@@ -31,7 +30,7 @@ ERROR_MESSAGES = [
     ]
 
 
-def write_2_json_file(path, courses):
+def write_to_json_file(path, courses):
     with open(path, "w", encoding="utf-8") as file:
         file.write(json.dumps(courses, ensure_ascii=False))
     return True
@@ -39,7 +38,6 @@ def write_2_json_file(path, courses):
 def read_lines_from_file(path):
     with open(path, "r", encoding="utf-8") as file:
         return [i.strip() for i in file.readlines()]
-
 
 def write_lines_in_file(path, lines):
     with open(path, "w", encoding="utf-8") as file:
@@ -64,7 +62,7 @@ class GoParseGB():
     def start(self):
         if os.path.exists(JSON_COURSES_PATH):
             MAIN_MENU.insert(0, self._continue_download,)
-        print(_SEPARATOR)
+        print(SEPARATOR)
         [print(choice) for choice in MAIN_MENU]
         _step = int(input(self.__step_choise))
         if _step not in [0, 1, 2, 3, 4]:
@@ -80,7 +78,7 @@ class GoParseGB():
                 return False
             with open(JSON_COURSES_PATH, "r", encoding="utf-8") as file:
                 _courses_json = json.load(file)
-        print(_SEPARATOR, self.__downl_material, sep='\n')
+        print(SEPARATOR, self.__downl_material, sep='\n')
         _courses_list = {
             'lessons': _courses_json['lessons'],
             'chapters': _courses_json['chapters'],
@@ -139,8 +137,7 @@ class ParseGB():
     __parse_inter_err = 'Не удалось пропарсить страницу интерактивы'
     __hw_material_add = 'homework'
 
-    def __init__(
-        self, _email, _password):
+    def __init__(self, _email, _password):
         self._email = _email
         self._password = _password
 
@@ -187,8 +184,8 @@ class ParseGB():
 
     def parse(self):
         _courses = self.parse_lessons()
-        write_2_json_file(path=JSON_COURSES_PATH, courses=_courses)
-        print(_SEPARATOR)
+        write_to_json_file(path=JSON_COURSES_PATH, courses=_courses)
+        print(SEPARATOR)
         print(f"{self.__save_in_file} {JSON_COURSES_PATH}")
         return True
 
@@ -196,8 +193,8 @@ class ParseGB():
         _lessons, _chapters, _interactives = self.check_parse_courses()
         if not _lessons:
             return False
-        print(_SEPARATOR, self.__parse_one_lesson, sep='\n')
-        print(_SEPARATOR)
+        print(SEPARATOR, self.__parse_one_lesson, sep='\n')
+        print(SEPARATOR)
         _lessons_list = self.parse_many_courses(_lessons)
         _chapters_list = self.parse_many_courses(_chapters)
         _interactives_list = self.parse_many_courses(_interactives)
@@ -208,11 +205,11 @@ class ParseGB():
         return _courses_dict
 
     def check_parse_courses(self):
-        print(_SEPARATOR, self.__parse_educ_url, sep='\n')
+        print(SEPARATOR, self.__parse_educ_url, sep='\n')
         try:
             _lessons, _chapters, _interactives = self.parse_courses()
         except Exception as EducationParseError:
-            print(_SEPARATOR, self.__parse_educ_url_err, sep='\n')
+            print(SEPARATOR, self.__parse_educ_url_err, sep='\n')
             return False, False, False
         return _lessons, _chapters, _interactives
 
@@ -352,9 +349,9 @@ class DownloadGB():
             return True
         return False
 
-    def is_google_drive(self, _file2download):
-        if self.__drive_google in _file2download or \
-                self.__docs_google in _file2download:
+    def is_google_drive(self, _file_to_download):
+        if self.__drive_google in _file_to_download or \
+                self.__docs_google in _file_to_download:
             return True
         return False
 
@@ -374,13 +371,13 @@ class DownloadGB():
                 [print(i) for i in self.__was_downl_info]
                 continue
 
-            # создаем папки
+            # create path
             self.create_or_download(f'{MAIN_PATH}/{_course_name}/')
             self.create_or_download(
                 f'{MAIN_PATH}/{_course_name}/{_lesson_name}/'
                 )
 
-            # скачаиваем инфу
+            # sonload info
             if lesson['comment'] is not None:
                 self.create_or_download(
                     f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{self.__attention}',
@@ -405,13 +402,14 @@ class DownloadGB():
                 links_list=_links_list
                 )
 
-            # TODO Если одинаковое название в списке с ссылками для
-            # TODO скачивания, нужно сделать разные называния
+            # TODO Если одинаковое название в списке с названием ссылок
+            # для скачивания? Нужно сделать разные называния что бы
+            # скачались, к примеру, оба видео, если были сбои
             n = 0
             while n+1 <= len(_links_list):
                 self.create_or_download(
                 f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{_names[n]}',
-                _file2download = _links_list[n],
+                _file_to_download = _links_list[n],
                 _pwd_path = f'{MAIN_PATH}/{_course_name}/{_lesson_name}'
                 ),
                 n += 1
@@ -422,12 +420,12 @@ class DownloadGB():
             'interactives': interactives
             }
 
-        write_2_json_file(JSON_COURSES_PATH, courses=_courses)
+        write_to_json_file(JSON_COURSES_PATH, courses=_courses)
         return True
 
-    def check_download_all(self, _file2download):
+    def check_download_all(self, _file_to_download):
         try:
-            request_url = requests.head(_file2download)
+            request_url = requests.head(_file_to_download)
         except Exception as e:
             request_url = None
         try:
@@ -440,42 +438,43 @@ class DownloadGB():
             content_type = None
         return request_url, connection, content_type
 
-    def download_all(self, path, _file2download, _pwd_path):
+    def download_all(self, path, _file_to_download, _pwd_path):
         request_url, connection, content_type = self.check_download_all(
-            _file2download
+            _file_to_download
             )
         if request_url is not None:
-            print(f"{_file2download} {self.__unexpexted_err}")
+            print(f"{_file_to_download} {self.__unexpexted_err}")
         if connection == 'close':
-            print(f'{self.__acsses_err} {_file2download}')
+            print(f'{self.__acsses_err} {_file_to_download}')
         if content_type is None and self.is_web_url(content_type):
-            if content_type is not None and self.is_google_drive(_file2download):
-                print(f"{self.__google_sheet} {_file2download}")
+            if content_type is not None and self.is_google_drive(_file_to_download):
+                print(f"{self.__google_sheet} {_file_to_download}")
             else:
-                print(f"{self.__web_url} {_file2download}")
+                print(f"{self.__web_url} {_file_to_download}")
         else:
-            urllib.request.urlretrieve(_file2download, path)
+            urllib.request.urlretrieve(_file_to_download, path)
             print(f"{self.__download_file} {path}")
             return True
 
-        return self.resave_urls(_file2download, _pwd_path)
+        return self.resave_urls_to_file(_file_to_download, _pwd_path)
 
-    def create_or_download(self, path, _pwd_path=None, _file2download=None, text=None):
+    def create_or_download(self, path, _pwd_path=None, _file_to_download=None,
+            text=None):
         if os.path.exists(f'{_pwd_path}/{self.__urls}'):
             print(f'{self.__arleady_exists} {_pwd_path}/{self.__urls}')
         if os.path.exists(path):
             print(f'{self.__arleady_exists} {path}')
         else:
-            if _file2download is None and text is None:
+            if _file_to_download is None and text is None:
                 os.mkdir(path)
                 print(f"{self.__create_path} {path}")
             elif text is not None:
                 save_text_in_file(path, text)
                 print(f"{self.__create_path} {path}")
-            elif _file2download is not None:
-                self.download_all(path, _file2download, _pwd_path)
+            elif _file_to_download is not None:
+                self.download_all(path, _file_to_download, _pwd_path)
 
-    def resave_urls(self, file2download, pwd_path):
+    def resave_urls_to_file(self, file2download, pwd_path):
         path = f'{pwd_path}/{self.__urls}'
         lines = []
         if os.path.exists(path):
