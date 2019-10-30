@@ -5,3 +5,4 @@ courses.json
 __pycache__/
 dwn_one.py
 testGeekBrains/
+backend/secrets.py
