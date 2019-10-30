@@ -8,6 +8,7 @@ import urllib.request
 import requests
 from bs4 import BeautifulSoup
 
+
 SEPARATOR = '*' * 50
 JSON_COURSES_PATH = os.path.abspath('courses.json')
 MAIN_PATH = os.path.abspath('GeekBrains')
@@ -17,7 +18,7 @@ MAIN_MENU = [
     '1 - Пропарсить и сохранить в json',
     f'2 - Скачать из json (файл должен находится по пути: {COURSES_URL})',
     '3 - Пропарсить и скачать (удаляется json файл)',
-    '>4 - Пропарсить и скачать (сохранить json файл)\n',
+    '4 - Пропарсить и скачать (сохранить json файл)\n',
     'PS: Для скачивания материала может потребоваться много времени \
 и места на жестком диске',
     ]
@@ -37,11 +38,11 @@ def write_to_json_file(path, courses):
 
 def read_lines_from_file(path):
     with open(path, "r", encoding="utf-8") as file:
-        return [i.strip() for i in file.readlines()]
+        return [line.strip() for line in file.readlines()]
 
 def write_lines_in_file(path, lines):
     with open(path, "w", encoding="utf-8") as file:
-        [file.writelines(i) for i in lines]
+        [file.writelines(line) for line in lines]
     return True
 
 def save_text_in_file(path, text):
@@ -54,71 +55,71 @@ class GoParseGB():
     __step_choise = 'Что будем делать?(Введите цифру): '
     __not_see_file = 'Не вижу файл:'
     __downl_material = 'Скачваем материал...'
-
-    def __init__(self):
-        self._continue_download = "0 - Продолжить скачивать"
+    _continue_download = "0 - Продолжить скачивать"
 
 
     def start(self):
+        step = -1
         if os.path.exists(JSON_COURSES_PATH):
             MAIN_MENU.insert(0, self._continue_download,)
-        print(SEPARATOR)
-        [print(choice) for choice in MAIN_MENU]
-        _step = int(input(self.__step_choise))
-        if _step not in [0, 1, 2, 3, 4]:
-            pass
-        if _step != 2 and _step != 0:
-            _authorization = self.check_authorization()
-            _courses_json = self.parsing(_authorization)
-        if _step == 1:
+        while step not in [0, 1, 2, 3, 4]:
+            print(SEPARATOR)
+            [print(choice) for choice in MAIN_MENU]
+            step = int(input(self.__step_choise))
+
+        if step != 2 and step != 0:
+            authorization = self.check_authorization()
+            courses_json = self.parsing(authorization)
+        if step == 1:
             return True
-        if _step == 2 or _step == 0:
+        if step == 2 or step == 0:
             if not os.path.exists(JSON_COURSES_PATH):
                 print(f'{self.__not_see_file} {JSON_COURSES_PATH}')
                 return False
             with open(JSON_COURSES_PATH, "r", encoding="utf-8") as file:
-                _courses_json = json.load(file)
+                courses_json = json.load(file)
         print(SEPARATOR, self.__downl_material, sep='\n')
-        _courses_list = {
-            'lessons': _courses_json['lessons'],
-            'chapters': _courses_json['chapters'],
-            'interactives': _courses_json['interactives']
+        courses_list = {
+            'lessons': courses_json['lessons'],
+            'chapters': courses_json['chapters'],
+            'interactives': courses_json['interactives']
             }
-        if _step == 0:
-            self.downloading(_courses_list, step=_step)
+        if step == 0:
+            self.downloading(courses_list, step=step)
         else:
-            self.downloading(_courses_list)
-        if _step == 3:
+            self.downloading(courses_list)
+        if step == 3:
             os.remove(JSON_COURSES_PATH)
         return True
 
     def check_authorization(self):
-        _email, _password = self.login()
+        email, password = self.login()
         try:
-            _authorization = self.authorization(_email, _password)
+            authorization = self.authorization(email, password)
         except Exception as AuthorizationError:
-            _authorization = False
-        if not _authorization:
+            authorization = None
+        if authorization is None:
             [print(error) for error in ERROR_MESSAGES]
-        return _authorization
+            return None
+        return authorization
 
     def login(self):
-        _email = input('Введите email от GB: ')
-        _password = input('Введите пароль от GB: ')
-        return _email, _password
+        email = input('Введите email от GB: ')
+        password = input('Введите пароль от GB: ')
+        return email, password
 
-    def authorization(self, _email, _password):
-        _authorization = ParseGB(_email, _password)
-        return _authorization
+    def authorization(self, email, password):
+        authorization = ParseGB(email, password)
+        return authorization
 
-    def parsing(self, _authorization):
-        _authorization.parse()
-        _authorization.close_session()
+    def parsing(self, authorization):
+        authorization.parse()
+        authorization.close_session()
         return True
 
-    def downloading(self, _courses_list, step=1):
+    def downloading(self, courses_list, step=1):
         _download = DownloadGB()
-        _download.main_download(courses=_courses_list, step=step)
+        _download.main_download(courses=courses_list, step=step)
         return True
 
 
@@ -137,23 +138,23 @@ class ParseGB():
     __parse_inter_err = 'Не удалось пропарсить страницу интерактивы'
     __hw_material_add = 'homework'
 
-    def __init__(self, _email, _password):
-        self._email = _email
-        self._password = _password
+    def __init__(self, email, password):
+        self.email = email
+        self.password = password
 
         # prepare to authorization
         self.url = f"{MAIN_URL}/login"
         self.connect = requests.Session()
         self.html = self.connect.get(self.url,verify=True)
         self.soup = BeautifulSoup(self.html.content, "html.parser")
-        self.hiddenAuthKey = self.soup.find(
+        self.hidden_auth_token = self.soup.find(
             'input', {'name': 'authenticity_token'})['value']
 
         # authorization
         self.connect.get(self.url,verify=True)
         self.login_data = {
-            "utf8": "✓", "authenticity_token": self.hiddenAuthKey,
-            "user[email]": self._email, "user[password]": self._password,
+            "utf8": "✓", "authenticity_token": self.hidden_auth_token,
+            "user[email]": self.email, "user[password]": self.password,
             "user[remember_me]": "0"
             }
         self.connect.post(
@@ -182,9 +183,13 @@ class ParseGB():
         return False
 
 
+    def get_soup(self, url):
+        html = self.connect.get(url)
+        return BeautifulSoup(html.content, "html.parser")
+
     def parse(self):
-        _courses = self.parse_lessons()
-        write_to_json_file(path=JSON_COURSES_PATH, courses=_courses)
+        courses = self.parse_lessons()
+        write_to_json_file(path=JSON_COURSES_PATH, courses=courses)
         print(SEPARATOR)
         print(f"{self.__save_in_file} {JSON_COURSES_PATH}")
         return True
@@ -192,17 +197,17 @@ class ParseGB():
     def parse_lessons(self):
         _lessons, _chapters, _interactives = self.check_parse_courses()
         if not _lessons:
-            return False
+            return None
         print(SEPARATOR, self.__parse_one_lesson, sep='\n')
         print(SEPARATOR)
         _lessons_list = self.parse_many_courses(_lessons)
         _chapters_list = self.parse_many_courses(_chapters)
         _interactives_list = self.parse_many_courses(_interactives)
-        _courses_dict = {
+        courses_dict = {
             'lessons': _lessons_list, 'chapters': _chapters_list,
             'interactives': _interactives_list
             }
-        return _courses_dict
+        return courses_dict
 
     def check_parse_courses(self):
         print(SEPARATOR, self.__parse_educ_url, sep='\n')
@@ -210,11 +215,11 @@ class ParseGB():
             _lessons, _chapters, _interactives = self.parse_courses()
         except Exception as EducationParseError:
             print(SEPARATOR, self.__parse_educ_url_err, sep='\n')
-            return False, False, False
+            return None, None, None
         return _lessons, _chapters, _interactives
 
     def parse_many_courses(self, courses):
-        _courses_list = []
+        courses_list = []
         for i in courses:
             print(f'{self.__parse_url} {i}')
             if 'lessons' in i or 'chapters' in i:
@@ -229,93 +234,102 @@ class ParseGB():
                 except Exception as InteractiveError:
                     print(self.__parse_inter_err)
                     return False
-            _courses_list.append(_one_course)
-        return _courses_list
+            courses_list.append(_one_course)
+        return courses_list
 
     def parse_courses(self):
-        _filehtml = self.connect.get(COURSES_URL)
-        _soup_all_courses = BeautifulSoup(_filehtml.content, "html.parser")
-        _find_json_courses = _soup_all_courses.find(
+        soup_courses = self.get_soup(COURSES_URL)
+        find_courses = soup_courses.find(
             'script', {"data-component-name": "EducationPage"}
             ).text
-        _json_courses = json.loads(_find_json_courses)
-        _webinars_and_interactives = _json_courses['data']['lessons']
-        _videos = _json_courses['data']['chapters']
-        _interactives_urls = []
-        _webinars_urls = []
-        _videos_urls = []
-        for key, value in _webinars_and_interactives.items():
-            if self.is_study_groups(value['link']):
-                _interactives_urls.append(
-                    f"{MAIN_URL}/{value['link']}/videos/{value['id']}"
+        load_courses = json.loads(find_courses)
+        webinars_and_interactives = load_courses['data']['lessons']
+        videos = load_courses['data']['chapters']
+        interactives_urls = []
+        webinars_urls = []
+        videos_urls = []
+        for key, lesson in webinars_and_interactives.items():
+            if self.is_study_groups(lesson['link']):
+                interactives_urls.append(
+                    f"{MAIN_URL}/{lesson['link']}/videos/{lesson['id']}"
                     )
-            if self.is_lessons(value['link']):
-                _webinars_urls.append(f"{MAIN_URL}/{value['link']}")
-        for key, value in _videos.items():
-            _videos_urls.append(f"{MAIN_URL}/{value['link']}")
-        return _webinars_urls, _videos_urls, _interactives_urls
+            if self.is_lessons(lesson['link']):
+                webinars_urls.append(f"{MAIN_URL}/{lesson['link']}")
+        for key, video in videos.items():
+            videos_urls.append(f"{MAIN_URL}/{video['link']}")
+        return webinars_urls, videos_urls, interactives_urls
 
     def parse_lesson_or_chapter(self, url):
-        filehtml = self.connect.get(url)
-        soup = BeautifulSoup(filehtml.content, "html.parser")
+        lesson_soup = self.get_soup(url)
         links_list = []
         name_list = []
-        for i in soup.findAll("li", {"class": "lesson-contents__list-item"}):
+        for i in lesson_soup.findAll(
+                "li",
+                {"class": "lesson-contents__list-item"}
+                ):
             links_list.append(i.find("a")['href'])
             name_list.append(i.find("a").text)
+
         links = {"name_list": name_list, "links_list": links_list}
-        course_name = soup.find("span", {"class": "course-title"}).text
-        lesson_name = soup.find("h3", {"class": "title"}).text
-        comment = soup.find("div", {"class": "lesson-content__content"})
+        course_name = lesson_soup.find("span", {"class": "course-title"}).text
+        lesson_name = lesson_soup.find("h3", {"class": "title"}).text
+        comment = lesson_soup.find("div", {"class": "lesson-content__content"})
+        is_downloaded = False
+
         if comment:
             comment = comment.text
         else:
             comment = None
-        hw = None
+        homework = None
         if self.is_lessons(url):
-            filehtml_homework = self.connect.get(f'{url}/ \
-                {self.__hw_material_add}')
-            homework = BeautifulSoup(filehtml_homework.content, "html.parser")
-            hw = homework.find("div", {"class": "task-block-teacher"})
-            if hw:
-                hw = hw.text
-        is_downloaded = False
+            homework_soup = self.get_soup(f'{url}/{self.__hw_material_add}')
+            homework = homework_soup.find(
+                "div",
+                {"class": "task-block-teacher"}
+                )
+            if homework:
+                homework = homework.text
         dic = {
             "course_name": course_name, "lesson_name": lesson_name,
             "content_url": url, "comment": comment, "links": links,
-            "hw": hw, "is_downloaded": is_downloaded
+            "homework": homework, "is_downloaded": is_downloaded
             }
         return dic
 
     def parse_interactive(self, url):
-        filehtml = self.connect.get(url)
-        soup = BeautifulSoup(filehtml.content, "html.parser")
+        interactive_soup = self.get_soup(url)
         links_list = []
         name_list = []
-        for i in soup.findAll("div", {"class": "lesson-contents"}):
+        for i in interactive_soup.findAll("div", {"class": "lesson-contents"}):
             links_list.append(i.find("a")['href'])
             name_list.append(i.find("a").text)
-        links = {"name_list": name_list, "links_list": links_list}
-        course_name = soup.find("span", {"class": "course-title"}).text
-        lesson_name = soup.find("h3", {"class": "title"}).text
-        url_2_parse_hw = re.findall(r'\/videos\/\d+', url) # TODO re.findall c [0]
-        videos_number = re.findall(r'\/\d+', url_2_parse_hw[0]) # TODO re.findall c [0]
-        url_2_parse_course = re.findall(r'study_groups/\d+/videos/', url) # TODO re.findall c [0]
-        url_2_parse_course_number = re.findall(r'/\d+/', url_2_parse_course[0]) # TODO re.findall c [0]
-        link_hw = f'{MAIN_URL}/study_groups' + \
-            f'{url_2_parse_course_number[0]}homeworks{videos_number[0]}'
-        filehtml_hw = self.connect.get(link_hw)
-        soup_hw = BeautifulSoup(filehtml_hw.content, "html.parser")
-        hw = soup_hw.find("div", {"class": "homework-description"}).text
-        comment = None
-        is_downloaded = False
-        dic = {
-            "course_name": course_name, "lesson_name": lesson_name,
-            "content_url": url, "links": links, "comment": comment, "hw": hw,
-            "is_downloaded": is_downloaded
-            }
-        return dic
+        link_hw = self.regex_inter_hw_url(url)
+        soup_hw = self.get_soup(link_hw)
 
+        homework = soup_hw.find("div", {"class": "homework-description"}).text
+        course_name = interactive_soup.find(
+            "span",
+            {"class": "course-title"}
+            ).text
+        lesson_name = interactive_soup.find("h3", {"class": "title"}).text
+        links = {"name_list": name_list, "links_list": links_list}
+        return {
+            "course_name": course_name, "lesson_name": lesson_name,
+            "content_url": url, "links": links, "comment": comment,
+            "homework": None, "is_downloaded": False
+            }
+
+    def regex_inter_hw_url(self, url): # TODO может можно 2 запросами?
+        url_to_parse_hw = re.findall(r'\/videos\/\d+', url) # TODO re.findall c [0]
+        videos_number = re.findall(r'\/\d+', url_to_parse_hw[0]) # TODO re.findall c [0]
+        inter_number = videos_number[0]
+
+        url_to_parse_course = re.findall(r'study_groups/\d+/videos/', url) # TODO re.findall c [0]
+        url_to_parse_course_number = re.findall(r'/\d+/', url_to_parse_course[0]) # TODO re.findall c [0]
+        url_hw = url_to_parse_course_number[0]
+
+        link_hw = f'{MAIN_URL}/study_groups' f'{url_hw}homeworks{inter_number}'
+        return link_hw
 
 class DownloadGB():
     """docstring for DownloadGB.
@@ -383,10 +397,10 @@ class DownloadGB():
                     f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{self.__attention}',
                     text=lesson['comment']
                     )
-            if lesson['hw'] is not None:
+            if lesson['homework'] is not None:
                 self.create_or_download(
                     f'{MAIN_PATH}/{_course_name}/{_lesson_name}/{self.__home_work}',
-                    text=lesson['hw']
+                    text=lesson['homework']
                     )
 
             _links_list = []
@@ -414,14 +428,13 @@ class DownloadGB():
                 ),
                 n += 1
             lesson['is_downloaded'] = True
-        _courses = {
+        courses = {
             'lessons': lessons,
             'chapters': chapters,
             'interactives': interactives
             }
-
-        write_to_json_file(JSON_COURSES_PATH, courses=_courses)
-        return True
+        write_to_json_file(JSON_COURSES_PATH, courses=courses)
+        return courses
 
     def check_download_all(self, _file_to_download):
         try:
